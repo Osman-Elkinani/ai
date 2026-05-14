@@ -112,6 +112,75 @@ li{margin:.3rem 0;color:#c4c7d4}
 </tbody></table>
 <p><strong>حجم فضاء الحالات</strong> = 10 × 5 × 5 × 5 × 5 × 7 = <strong>43,750 حالة</strong></p>
 
+<div class="card">
+<strong>لماذا هذه الخمسة تحديداً؟ (تبرير مدعوم بأبحاث)</strong><br><br>
+الحد الأدنى المطلوب حسب الأدبيات = <strong>3 متغيرات</strong> (مثل: المستوى + الجزء المستهدف + المعدات). اخترنا 5 لأن كل واحد يخدم غرضاً لا يمكن الاستغناء عنه:<br><br>
+<table>
+<thead><tr><th>المتغير</th><th>السبب</th><th>المرجع</th></tr></thead>
+<tbody>
+<tr><td><code>fitness</code></td><td>المؤشر الرئيسي للقدرة القلبية — كل أنظمة RL-fitness تستخدمه</td><td>PERFECT 2023, PPO 2024</td></tr>
+<tr><td><code>energy</code></td><td>بديل عملي لـ RPE — يحدد قدرة المستخدم على التمرين اليوم</td><td>RPE-based rewards (Borg Scale)</td></tr>
+<tr><td><code>weight</code></td><td>مطلوب لهدف نزول الوزن — الوكيل يتتبع تقدم الوزن</td><td>PERFECT: weight as context vector</td></tr>
+<tr><td><code>muscle</code></td><td>مطلوب لهدف بناء العضلات — يقيّم فعالية strength training</td><td>Personalized Exercise RL (2024)</td></tr>
+<tr><td><code>fatigue</code></td><td><strong>عامل الأمان</strong> — بدونه الوكيل يوصي بتمارين مرهقة متتالية</td><td>Q-Learning degrades 92%→74% under stochasticity</td></tr>
+</tbody></table>
+</div>
+
+<div class="note">
+<strong>لماذا 5 وليس أكثر؟</strong><br>
+• 5 أبعاد = 3,125 حالة — الأبحاث تحذر أن الطرق الجدولية "غير عملية بعد ~225 حالة بدون استراتيجيات استكشاف متقدمة"<br>
+• نحن نخفف ذلك بـ: <strong>PBRS</strong> (تسريع التقارب) + <strong>ε-greedy decay</strong> (استكشاف متوازن)<br>
+• <strong>متغيرات استبعدناها عمداً:</strong> النوم (مشكلة مزامنة البيانات)، التوتر (ذاتي جداً)، تاريخ التمارين (يضاعف فضاء الحالات)<br>
+• العمر والوزن الحقيقيان يُستخدمان كـ <strong>contextual features</strong> لمعايرة HR<sub>max</sub> = 220 - age (لا يدخلان في الـ MDP مباشرة)
+</div>
+
+<h3>4.1.1 متغيرات الحالة vs المتغيرات السياقية</h3>
+<p>قرار معماري مهم: ليس كل عامل يدخل الـ State Space. المتغيرات البطيئة أو الثابتة تبقى كـ <strong>contextual features</strong> تُفلتر الأفعال بدل ما تضاعف الحالات:</p>
+<table>
+<thead><tr><th>العامل</th><th>النوع</th><th>السبب</th></tr></thead>
+<tbody>
+<tr><td>fitness, energy, weight, muscle, fatigue</td><td><span class="tag tag-purple">State Variable</span></td><td>تتغير بعد كل فعل — <strong>لازم</strong> يتتبعها الـ MDP</td></tr>
+<tr><td>العمر، الوزن الحقيقي</td><td><span class="tag tag-cyan">Contextual Feature</span></td><td>ثابتة تقريباً — تُستخدم لمعايرة HR<sub>max</sub> والسعرات</td></tr>
+<tr><td>⏱️ الوقت المتاح</td><td><span class="tag tag-cyan">Contextual Filter</span></td><td>يُفلتر أي تمارين ممكنة حسب المدة</td></tr>
+<tr><td>🛠️ المعدات</td><td><span class="tag tag-cyan">Contextual Filter</span></td><td>يحدد أي تمارين قابلة للتنفيذ</td></tr>
+<tr><td>✅ معدل الإنجاز</td><td><span class="tag tag-amber">Reward Signal</span></td><td>يدخل في حساب المكافأة — لا يوسّع فضاء الحالات</td></tr>
+<tr><td>🤕 الإصابات</td><td><span class="tag tag-amber">Action Mask</span></td><td>يستبعد أفعال خطرة من الاختيار</td></tr>
+</tbody></table>
+<div class="note">
+<strong>لو أضفنا (الوقت + المعدات + الإنجاز) في الـ State:</strong> 43,750 × 4 × 3 × 3 = <strong>1,575,000+ حالة</strong> ← Q-table ينفجر! لذلك نحتفظ بها كـ contextual features.
+</div>
+
+<h3>4.1.2 نموذج الانتقال — Accumulator Pattern</h3>
+<p>الأبحاث تحذر: <em>"published RL fitness systems do NOT model weight and muscle as step-by-step MDP transitions"</em>. الوزن والعضلات يتغيران على مدى أسابيع لا أيام.</p>
+<div class="note">
+<strong>الحل — نمط المراكم (Accumulator Pattern):</strong><br>
+بدل تغيير المستوى مباشرة كل يوم، نجمّع التغييرات الصغيرة في متراكم داخلي. المستوى يتغير <strong>فقط عندما |acc| ≥ 1.0</strong>:<br><br>
+<code>acc_weight += delta_weight_daily</code><br>
+<code>if |acc_weight| ≥ 1.0: weight_level += sign(acc_weight); acc_weight -= shift</code><br><br>
+<strong>المتغيرات السريعة</strong> (Energy, Fatigue) ← تتغير كل خطوة (مستوى الجلسة)<br>
+<strong>المتغيرات البطيئة</strong> (Fitness, Weight, Muscle) ← تحتاج ~7-15 يوم متواصل لتغيير مستوى واحد
+</div>
+
+<h3>4.1.3 منع حالات الثقوب (Hole States)</h3>
+<p>في فضاء 43,750 حالة، كثير من الحالات قد لا يزورها الوكيل أبداً أثناء التدريب. نستخدم استراتيجيتين:</p>
+<table>
+<thead><tr><th>الاستراتيجية</th><th>الآلية</th><th>التطبيق</th></tr></thead>
+<tbody>
+<tr>
+<td><strong>Optimistic Initialization</strong></td>
+<td>Q₀(s,a) = V<sub>max</sub> = 5.0 بدل 0.0</td>
+<td>الحالات غير المستكشفة تبدو "مجزية" فالوكيل يُجبَر رياضياً على استكشافها</td>
+</tr>
+<tr>
+<td><strong>Synthetic Pre-training</strong></td>
+<td>3,000 حلقة محاكاة قبل النشر</td>
+<td>تملأ الـ Q-table بأنماط سلوكية واقعية تمنع Dead-ends</td>
+</tr>
+</tbody></table>
+<div class="note">
+<strong>نموذج الضوضاء:</strong> p<sub>slip</sub> = 0.1 (10% perturbation) — مبني على معايير أبحاث RL حيث p<sub>slip</sub> ≥ 0.2 = بيئة عالية العشوائية.
+</div>
+
 <h3>4.2 الأفعال (Actions) — 28 فعل</h3>
 <p>كل فعل = <strong>تمرين + نظام غذائي</strong></p>
 <table>
@@ -144,12 +213,30 @@ new_fitness = clamp(fitness + delta_fitness, 0, 9)</code></pre>
 
 <h3>4.4 دالة المكافأة R(s, a, s')</h3>
 <div class="card">
+<strong>دالة المكافأة المُركّبة (Composite Reward — مبنية على أبحاث منشورة):</strong><br>
+<div class="eq">R_total = w1·(goal_progress) + w2·(energy_maintenance) - w3·(fatigue_penalty) - w4·(safety_penalty)</div>
 <strong>هدف نزول الوزن:</strong><br>
 +3.0 لكل نقطة نزول وزن &nbsp;|&nbsp; +1.5 لكل نقطة زيادة لياقة &nbsp;|&nbsp; +0.5 لو الطاقة ≥ متوسطة<br>
--3.0 لو الإرهاق عالي جداً &nbsp;|&nbsp; -2.0 لو الطاقة منخفضة جداً &nbsp;|&nbsp; -0.1 عقوبة زمنية
+-4.0 لو الإرهاق شديد (منطقة خطر إصابة) &nbsp;|&nbsp; -2.5 لو الطاقة منهكة &nbsp;|&nbsp; -0.3 عقوبة تكرار نفس الفعل<br>
+-0.1 عقوبة زمنية لتشجيع الكفاءة
+</div>
+<div class="note">
+<strong>مرجع:</strong> تصميم دالة المكافأة مبني على إطار PERFECT (2023) اللي يستخدم convex reward functions لاستهداف مناطق القلب المثالية، وأبحاث PPO في العلاج الطبيعي (2025) اللي توازن بين التكرارات والمجهود المُدرك.
 </div>
 
-<h3>4.5 معامل الخصم γ = 0.95</h3>
+<h3>4.5 تشكيل المكافأة المبني على الإمكانات (Potential-Based Reward Shaping)</h3>
+<p>لتسريع تقارب Q-Learning بدون تغيير السياسة المثلى، نستخدم تقنية PBRS (Ng et al., 1999):</p>
+<div class="eq">F(s, s') = γ · φ(s') - φ(s)</div>
+<ul>
+<li><code>φ(s)</code> = - المسافة من الحالة s للهدف (heuristic سالبة)</li>
+<li>كل خطوة تقرّبنا للهدف تنتج <strong>مكافأة إضافية موجبة</strong></li>
+<li>كل خطوة تبعّدنا تنتج <strong>عقوبة إضافية</strong></li>
+</ul>
+<div class="note">
+<strong>لماذا مهم؟</strong> بدون PBRS، الوكيل يحتاج حلقات كثيرة عشان يكتشف إن الحالة القريبة من الهدف أفضل. مع PBRS، كل خطوة تعطيه إشارة واضحة عن الاتجاه الصحيح — مثبت رياضياً أنه لا يغير السياسة المثلى.
+</div>
+
+<h3>4.6 معامل الخصم γ = 0.95</h3>
 <p>نهتم بالمكافآت المستقبلية لكن نفضل المكافآت القريبة.</p>
 
 <hr>
@@ -177,7 +264,7 @@ new_fitness = clamp(fitness + delta_fitness, 0, 9)</code></pre>
 </div>
 
 <h3>دورة التدريب:</h3>
-<pre><code>for episode in range(500):           # 500 حلقة تدريب
+<pre><code>for episode in range(3000):          # 3000 حلقة تدريب
     state = env.reset()              # 1. ابدأ من البداية
     for step in range(30):           # 2. لكل يوم (30 يوم)
         action = epsilon_greedy()    #    اختر فعل
@@ -210,7 +297,7 @@ new_fitness = clamp(fitness + delta_fitness, 0, 9)</code></pre>
 
 <h3>قاعدة تحديث الأوزان:</h3>
 <div class="eq">wᵢ ← wᵢ + α × difference × fᵢ(s, a)</div>
-<p><strong>الميزة:</strong> بدل 1.4 مليون قيمة ← <strong>12 وزن فقط!</strong> + يعمم على حالات جديدة.</p>
+<p><strong>الميزة:</strong> بدل 1.2 مليون قيمة ← <strong>12 وزن فقط!</strong> + يعمم على حالات جديدة.</p>
 
 <hr>
 
@@ -324,9 +411,9 @@ new_fitness = clamp(fitness + delta_fitness, 0, 9)</code></pre>
 <table>
 <thead><tr><th>الملف</th><th>الاسم</th><th>الهدف</th><th>الحالة الأولية</th></tr></thead>
 <tbody>
-<tr><td>beginner_weight_loss</td><td>Alex</td><td>نزول وزن</td><td>fitness=2, weight=3</td></tr>
-<tr><td>intermediate_muscle</td><td>Sam</td><td>بناء عضل</td><td>fitness=5, muscle=2</td></tr>
-<tr><td>advanced_fitness</td><td>Jordan</td><td>لياقة عامة</td><td>fitness=6, muscle=3</td></tr>
+<tr><td>beginner_weight_loss</td><td>أحمد</td><td>نزول وزن</td><td>fitness=2, weight=3</td></tr>
+<tr><td>intermediate_muscle</td><td>خالد</td><td>بناء عضل</td><td>fitness=5, muscle=2</td></tr>
+<tr><td>advanced_fitness</td><td>عمر</td><td>لياقة عامة</td><td>fitness=6, muscle=3</td></tr>
 <tr><td><strong>Custom</strong></td><td>مخصص</td><td>يختار المستخدم</td><td>sliders تفاعلية</td></tr>
 </tbody></table>
 
@@ -400,6 +487,61 @@ python run.py --cli</code></pre>
 <tr><td><code>web/app.py</code></td><td>سيرفر Flask مع 8 API endpoints</td></tr>
 <tr><td><code>run.py</code></td><td>نقطة التشغيل — وضعين: web و cli</td></tr>
 </tbody></table>
+
+<hr>
+
+<!-- 15 - Literature Review -->
+<h2>📌 15. مراجعة الأدبيات (Literature Review)</h2>
+<p>مقارنة منهجنا مع أبحاث منشورة في مجال توصيات اللياقة بالذكاء الاصطناعي:</p>
+<table>
+<thead><tr><th>البحث</th><th>السنة</th><th>الطريقة</th><th>النتيجة الرئيسية</th><th>الصلة بمشروعنا</th></tr></thead>
+<tbody>
+<tr><td>PERFECT Framework</td><td>2023</td><td>Contextual Bandits</td><td>زيادة ملحوظة في مدة التمرين اليومي (P < .001)</td><td>قدّم قالب رياضي لاستخدام مناطق نبضات القلب كمكافآت</td></tr>
+<tr><td>RL Exercise Prescription App</td><td>2024</td><td>PPO</td><td>تحسين كبير في استمتاع التمرين (PACES-8)</td><td>يوضح أهمية موازنة الشدة مع ملاحظات المستخدم</td></tr>
+<tr><td>Policy Learning for Physiotherapy</td><td>2025</td><td>PPO</td><td>تعلم الوكيل ضبط التكرارات حسب تحمّل المريض</td><td>يؤكد التعامل مع ملاحظات متعددة الأبعاد (RPE + التكرارات)</td></tr>
+<tr><td>Personalized Exercise with RL</td><td>2024</td><td>Tabular Q-Learning</td><td>تقسيم الحالات حسب المستوى والجزء والمعدات ينتج توصيات سريعة الاستجابة</td><td><strong>تأكيد مباشر</strong> أن نهج الحالات المنفصلة فعّال</td></tr>
+<tr><td>Evidence-Driven Simulated Data</td><td>2026</td><td>Contextual Bandits</td><td>البيانات الاصطناعية تحل مشكلة Cold Start</td><td>طريقة لملء Q-Table قبل الاختبار الحقيقي</td></tr>
+</tbody></table>
+
+<h3>بيانات تجريبية من الأدبيات:</h3>
+<div class="card">
+<strong>Q-Learning في بيئات عشوائية:</strong> حقق نسبة نجاح 92% في بيئات بسيطة لكن انخفض إلى 74% تحت العشوائية العالية.<br>
+<strong>PPO في تطبيق Samsung:</strong> تدريب على 97,000 حلقة قبل النشر الحقيقي مع 62-69 مشارك عبر 559 جلسة تدريب.<br>
+<strong>PERFECT Framework:</strong> اختبار على 20 طالبة لمدة 12 أسبوع — 87.5% صرّحن أن الـ AI لبّى احتياجاتهن.
+</div>
+
+<hr>
+
+<!-- 16 - Evaluation Metrics -->
+<h2>📌 16. مقاييس التقييم المتقدمة (Research-Backed Evaluation Metrics)</h2>
+<p>بالإضافة للمكافأة التراكمية، نستخدم مقاييس مدعومة بأبحاث:</p>
+<table>
+<thead><tr><th>المقياس</th><th>التعريف</th><th>لماذا مهم؟</th></tr></thead>
+<tbody>
+<tr><td><strong>Policy Stability %</strong></td><td>نسبة الحالات اللي عندها فعل مسيطر واحد واضح</td><td>استقرار عالي = سياسة ناضجة وموثوقة</td></tr>
+<tr><td><strong>Goal Achievement Rate %</strong></td><td>نسبة الحلقات اللي وصلت للهدف</td><td>يقيس فعالية التعلم في تحقيق المطلوب</td></tr>
+<tr><td><strong>State Coverage %</strong></td><td>نسبة الحالات المستكشفة من إجمالي 43,750</td><td>تغطية محدودة = نموذج "هش" يفشل في حالات حافة</td></tr>
+<tr><td>Avg Reward (Last 100)</td><td>متوسط المكافأة لآخر 100 حلقة</td><td>يظهر أداء السياسة المستقرة</td></tr>
+<tr><td>Current ε</td><td>معدل الاستكشاف الحالي</td><td>يوضح مرحلة التعلم (استكشاف أم استغلال)</td></tr>
+</tbody></table>
+
+<hr>
+
+<!-- 17 - Limitations -->
+<h2>📌 17. القيود والتحسينات المستقبلية</h2>
+<h3>قيود Q-Learning الجدولي:</h3>
+<ul>
+<li><strong>لعنة الأبعاد:</strong> كل ما نضيف متغيرات حالة (نوم، توتر، خطوات دقيقة) فضاء الحالات ينفجر ويصبح الجدول غير عملي</li>
+<li><strong>انحياز التعظيم (Maximization Bias):</strong> Q-Learning يبالغ في تقدير قيم الأفعال لأن نفس الجدول يُستخدم للاختيار والتقييم — خطير في بيئات صحية عشوائية</li>
+<li><strong>مشكلة البداية الباردة (Cold Start):</strong> التوصيات الأولية ضعيفة قبل ما الوكيل يتعلم — ممكن المستخدم يتركها</li>
+</ul>
+<h3>تحسينات مقترحة:</h3>
+<ul>
+<li><strong>Double Q-Learning:</strong> جدولان مستقلان لفصل الاختيار عن التقييم — يقلل انحياز التعظيم بشكل كبير</li>
+<li><strong>Deep Q-Networks:</strong> استبدال الجدول بشبكات عصبية للتعامل مع حالات مستمرة وبيانات حيوية حقيقية</li>
+<li><strong>بيانات تدريب اصطناعية:</strong> توليد مستخدمين افتراضيين لتعبئة الـ Q-table قبل التعرض لمستخدمين حقيقيين</li>
+<li><strong>Contextual Bandits:</strong> للمكافآت الفورية المعتمدة على السياق (جدول المستخدم اليومي)</li>
+</ul>
 
 </div>
 </body>

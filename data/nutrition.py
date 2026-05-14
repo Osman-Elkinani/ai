@@ -16,10 +16,10 @@ NUTRITION_DATABASE = {
         'daily_calories': 1600,
         'macros': {'protein': 0.35, 'carbs': 0.40, 'fat': 0.25},
         'effects': {
-            'energy': -0.5,     # Less energy from fewer calories
-            'weight': -0.5,     # Weight loss from deficit
-            'muscle': -0.1,     # Slight muscle loss risk
-            'fatigue': 0.3,     # Slightly more fatigued
+            'energy': -0.5,
+            'weight': -0.05,     # ~20 days consistent = -1 level (with exercise)
+            'muscle': -0.02,
+            'fatigue': 0.3,
         },
         'description': 'Eat below maintenance calories to promote fat loss.'
     },
@@ -42,10 +42,10 @@ NUTRITION_DATABASE = {
         'daily_calories': 2800,
         'macros': {'protein': 0.30, 'carbs': 0.50, 'fat': 0.20},
         'effects': {
-            'energy': 1.0,      # More energy from extra calories
-            'weight': 0.5,      # Weight gain
-            'muscle': 0.3,      # Better muscle building
-            'fatigue': -0.5,    # Better recovery
+            'energy': 1.0,
+            'weight': 0.05,
+            'muscle': 0.05,
+            'fatigue': -0.5,
         },
         'description': 'Eat above maintenance to support muscle growth.'
     },
@@ -56,9 +56,9 @@ NUTRITION_DATABASE = {
         'macros': {'protein': 0.45, 'carbs': 0.35, 'fat': 0.20},
         'effects': {
             'energy': 0.3,
-            'weight': -0.1,
-            'muscle': 0.5,      # Best for muscle preservation/growth
-            'fatigue': -0.3,    # Good recovery
+            'weight': -0.02,
+            'muscle': 0.08,     # Best nutrition for muscle
+            'fatigue': -0.3,
         },
         'description': 'High protein intake to maximize muscle synthesis.'
     },

@@ -14,24 +14,63 @@ let approxTrainingData = null;
 let viData = null;
 let isAutoSimulating = false;
 
-// ═══════════════ CHART CONFIGURATION ═══════════════
+// ═══════════════ CHART CONFIGURATION (Impeccable Register) ═══════════════
+// Restrained OKLCH-derived palette, minimal grid, bottom legend, no fill.
+const PALETTE = {
+    indigo:  '#5b3ac2',   // oklch(0.45 0.18 280) — primary accent
+    teal:    '#1590a8',   // oklch(0.58 0.12 200) — secondary
+    emerald: '#1a8a68',   // oklch(0.54 0.13 160) — tertiary
+    coral:   '#b94444',   // oklch(0.52 0.15 25)  — danger/fatigue
+    grid:    'rgba(0,0,0,0.04)',
+    tick:    '#8b8fa3',
+    legend:  '#5c5f73',
+};
+
 const CHART_DEFAULTS = {
     responsive: true,
     maintainAspectRatio: false,
-    animation: { duration: 600, easing: 'easeOutQuart' },
+    animation: { duration: 300, easing: 'easeOutQuart' },
+    interaction: { mode: 'index', intersect: false },
     plugins: {
         legend: {
-            labels: { color: '#8b8fa3', font: { family: 'Inter', size: 11 } }
+            position: 'bottom',
+            labels: {
+                color: PALETTE.legend,
+                font: { family: 'Inter, sans-serif', size: 11, weight: 500 },
+                padding: 16,
+                usePointStyle: true,
+                pointStyleWidth: 10,
+            }
+        },
+        tooltip: {
+            backgroundColor: 'rgba(30,30,50,0.92)',
+            titleFont: { family: 'Inter, sans-serif', size: 12 },
+            bodyFont: { family: 'Inter, sans-serif', size: 11 },
+            padding: 10,
+            cornerRadius: 8,
+            displayColors: true,
+            boxPadding: 4,
         }
     },
     scales: {
         x: {
-            grid: { color: 'rgba(255,255,255,0.04)' },
-            ticks: { color: '#555770', font: { family: 'Inter', size: 10 } }
+            grid: { display: false },
+            ticks: {
+                color: PALETTE.tick,
+                font: { family: 'Inter, sans-serif', size: 10 },
+                maxTicksLimit: 12,
+                maxRotation: 0,
+            },
+            border: { color: PALETTE.grid },
         },
         y: {
-            grid: { color: 'rgba(255,255,255,0.04)' },
-            ticks: { color: '#555770', font: { family: 'Inter', size: 10 } }
+            grid: { color: PALETTE.grid, lineWidth: 1 },
+            ticks: {
+                color: PALETTE.tick,
+                font: { family: 'Inter, sans-serif', size: 10 },
+                padding: 8,
+            },
+            border: { display: false },
         }
     }
 };
@@ -53,22 +92,22 @@ function initCharts() {
                 {
                     label: 'Q-Learning',
                     data: [],
-                    borderColor: '#a78bfa',
-                    backgroundColor: 'rgba(167,139,250,0.1)',
-                    borderWidth: 2,
+                    borderColor: PALETTE.indigo,
+                    backgroundColor: PALETTE.indigo,
+                    borderWidth: 1.5,
                     pointRadius: 0,
-                    tension: 0.4,
-                    fill: true,
+                    tension: 0.35,
+                    fill: false,
                 },
                 {
                     label: 'Approx Q-Learning',
                     data: [],
-                    borderColor: '#06b6d4',
-                    backgroundColor: 'rgba(6,182,212,0.1)',
-                    borderWidth: 2,
+                    borderColor: PALETTE.teal,
+                    backgroundColor: PALETTE.teal,
+                    borderWidth: 1.5,
                     pointRadius: 0,
-                    tension: 0.4,
-                    fill: true,
+                    tension: 0.35,
+                    fill: false,
                 }
             ]
         },
@@ -91,39 +130,42 @@ function initCharts() {
                 {
                     label: 'Fitness',
                     data: [],
-                    borderColor: '#a78bfa',
+                    borderColor: PALETTE.indigo,
+                    backgroundColor: PALETTE.indigo,
                     borderWidth: 2,
-                    pointRadius: 3,
-                    pointBackgroundColor: '#a78bfa',
+                    pointRadius: 2,
+                    pointHoverRadius: 5,
                     tension: 0.3,
                 },
                 {
                     label: 'Energy',
                     data: [],
-                    borderColor: '#06b6d4',
-                    borderWidth: 2,
-                    pointRadius: 3,
-                    pointBackgroundColor: '#06b6d4',
+                    borderColor: PALETTE.teal,
+                    backgroundColor: PALETTE.teal,
+                    borderWidth: 1.5,
+                    pointRadius: 2,
+                    pointHoverRadius: 5,
                     tension: 0.3,
                 },
                 {
                     label: 'Muscle',
                     data: [],
-                    borderColor: '#10b981',
-                    borderWidth: 2,
-                    pointRadius: 3,
-                    pointBackgroundColor: '#10b981',
+                    borderColor: PALETTE.emerald,
+                    backgroundColor: PALETTE.emerald,
+                    borderWidth: 1.5,
+                    pointRadius: 2,
+                    pointHoverRadius: 5,
                     tension: 0.3,
                 },
                 {
                     label: 'Fatigue',
                     data: [],
-                    borderColor: '#ef4444',
-                    borderWidth: 2,
-                    pointRadius: 3,
-                    pointBackgroundColor: '#ef4444',
+                    borderColor: PALETTE.coral,
+                    backgroundColor: PALETTE.coral,
+                    borderWidth: 1.5,
+                    pointRadius: 0,
                     tension: 0.3,
-                    borderDash: [5, 5],
+                    borderDash: [4, 3],
                 }
             ]
         },
@@ -135,6 +177,10 @@ function initCharts() {
                     ...CHART_DEFAULTS.scales.y,
                     min: 0,
                     max: 9,
+                    ticks: {
+                        ...CHART_DEFAULTS.scales.y.ticks,
+                        stepSize: 1,
+                    }
                 }
             }
         }
@@ -174,17 +220,31 @@ async function setupProfile() {
     let body;
 
     if (preset === 'custom') {
+        // Auto-calculate weight level from BMI
+        const weightKg = parseInt(document.getElementById('sl-bodyweight').value);
+        const heightCm = parseInt(document.getElementById('sl-height').value);
+        const bmi = weightKg / ((heightCm / 100) ** 2);
+        let weightLevel;
+        if (bmi < 18.5) weightLevel = 0;        // Very Underweight
+        else if (bmi < 22) weightLevel = 1;      // Underweight
+        else if (bmi < 25) weightLevel = 2;      // Normal
+        else if (bmi < 30) weightLevel = 3;      // Overweight
+        else weightLevel = 4;                     // Obese
+        document.getElementById('sl-weight').value = weightLevel;
+
         body = {
             custom: {
                 name: 'Custom User',
                 goal_type: document.getElementById('goal-select').value,
-                age: 25,
-                weight_kg: 80,
-                height_cm: 175,
+                age: parseInt(document.getElementById('sl-age').value),
+                weight_kg: weightKg,
+                height_cm: heightCm,
+                time_available: parseInt(document.getElementById('time-select').value),
+                equipment: document.getElementById('equipment-select').value,
                 initial_state: {
                     fitness: parseInt(document.getElementById('sl-fitness').value),
                     energy: parseInt(document.getElementById('sl-energy').value),
-                    weight: parseInt(document.getElementById('sl-weight').value),
+                    weight: weightLevel,
                     muscle: parseInt(document.getElementById('sl-muscle').value),
                     fatigue: parseInt(document.getElementById('sl-fatigue').value),
                 }
@@ -209,6 +269,9 @@ function updateProfileInfo(profile) {
     document.getElementById('info-goal').textContent = profile.goal_type.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
     document.getElementById('info-age').textContent = profile.age;
     document.getElementById('info-weight').textContent = profile.weight_kg + ' kg';
+    // HR_max = 220 - age (standard formula from PERFECT Framework)
+    const hrMax = 220 - profile.age;
+    document.getElementById('info-hrmax').textContent = hrMax + ' bpm';
 }
 
 function updateStateDisplay(state) {
@@ -227,10 +290,15 @@ async function trainAgents() {
     const batchSize = 50;
     const numBatches = Math.ceil(totalEpisodes / batchSize);
 
-    // Show progress overlay
+    // Show progress banner (not full-screen, so charts stay visible)
     showLoading(`Training agents — 0 / ${totalEpisodes} episodes`);
     document.getElementById('progress-container').style.display = 'block';
     document.getElementById('progress-fill').style.width = '0%';
+
+    // Scroll to charts so user sees live learning curve
+    setTimeout(() => {
+        document.getElementById('charts-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 300);
 
     let allQRewards = [];
     let allApproxRewards = [];
@@ -240,11 +308,18 @@ async function trainAgents() {
             const eps = Math.min(batchSize, totalEpisodes - i * batchSize);
             const resume = i > 0;
 
-            const data = await apiCall('/api/train', 'POST', {
-                episodes: eps,
-                agent: 'both',
-                resume: resume
-            });
+            // Build request body — include hyperparams on first batch
+            const body = { episodes: eps, agent: 'both', resume: resume };
+            if (!resume) {
+                body.hyperparams = {
+                    alpha: parseFloat(document.getElementById('param-alpha').value) || 0.1,
+                    gamma: parseFloat(document.getElementById('param-gamma').value) || 0.95,
+                    epsilon_start: parseFloat(document.getElementById('param-epsilon-start').value) || 1.0,
+                    epsilon_end: parseFloat(document.getElementById('param-epsilon-end').value) || 0.05,
+                };
+            }
+
+            const data = await apiCall('/api/train', 'POST', body);
 
             if (data.status === 'ok') {
                 // Accumulate rewards
@@ -314,6 +389,13 @@ function updateMetrics(results) {
     document.getElementById('metric-best-reward').textContent = q.best_reward || '--';
     document.getElementById('metric-epsilon').textContent = q.final_epsilon || '1.0';
     document.getElementById('metric-states').textContent = q.states_explored || 0;
+    // Research-backed metrics
+    document.getElementById('metric-stability').textContent =
+        q.policy_stability !== undefined ? q.policy_stability + '%' : '--';
+    document.getElementById('metric-goal-rate').textContent =
+        q.goal_achievement_rate !== undefined ? q.goal_achievement_rate + '%' : '--';
+    document.getElementById('metric-coverage').textContent =
+        q.state_coverage !== undefined ? q.state_coverage + '%' : '--';
 }
 
 function updateLearningCurve(results) {
@@ -441,6 +523,23 @@ function displayRecommendation(containerId, rec, label) {
     const container = document.getElementById(containerId);
     const desc = rec.action_description;
 
+    // Decode action index → workout + nutrition names
+    const WORKOUTS = ['😴 Rest', '🚶 Walking', '🏃 Jogging', '🔥 HIIT', '🏋️ Strength', '🏊 Swimming', '🚴 Cycling'];
+    const NUTRITIONS = ['📉 Deficit', '⚖️ Maintenance', '📈 Surplus', '🥩 High Protein'];
+    const NUM_NUT = 4;
+    function decodeAction(actionIdx) {
+        const w = Math.floor(actionIdx / NUM_NUT);
+        const n = actionIdx % NUM_NUT;
+        return `${WORKOUTS[w] || '?'} + ${NUTRITIONS[n] || '?'}`;
+    }
+
+    const alternatives = rec.top_5_actions.slice(1, 4).map(a =>
+        `<div style="display:flex;justify-content:space-between;padding:0.2rem 0;border-bottom:1px solid var(--border);">
+            <span>${decodeAction(a.action)}</span>
+            <code style="font-size:0.75rem;color:var(--text-3);">${a.q_value}</code>
+        </div>`
+    ).join('');
+
     container.innerHTML = `
         <div class="rec-action">
             <div class="rec-action-icon">${desc.workout_emoji}</div>
@@ -448,11 +547,11 @@ function displayRecommendation(containerId, rec, label) {
                 <h4>${desc.workout} + ${desc.nutrition}</h4>
                 <p>${desc.nutrition_emoji} ${desc.nutrition} nutrition plan</p>
             </div>
-            <div class="rec-qvalue">V: ${rec.q_value ?? rec.v_value}</div>
+            <div class="rec-qvalue">${(rec.q_value ?? rec.v_value).toFixed(2)}</div>
         </div>
-        <div style="font-size:0.8rem;color:var(--text-secondary);margin-top:0.5rem;">
-            <strong>Top alternatives:</strong>
-            ${rec.top_5_actions.slice(1, 4).map(a => `<span style="margin-left:0.5rem;">Action ${a.action} (Q: ${a.q_value})</span>`).join('')}
+        <div style="font-size:0.8rem;margin-top:0.5rem;">
+            <strong style="color:var(--text-2);">Alternatives:</strong>
+            <div style="margin-top:0.3rem;">${alternatives}</div>
         </div>
     `;
 }
@@ -541,7 +640,7 @@ function addLogEntry(step) {
 }
 
 function clearSimLog() {
-    document.getElementById('sim-log').innerHTML = '<div class="log-empty">Run a simulation to see activity here</div>';
+    document.getElementById('sim-log').innerHTML = '<div class="log-empty">Each simulation step picks the agent\'s best action for the current state and advances one day. Click "Simulate Step" to begin.</div>';
 }
 
 // ═══════════════ RESET ═══════════════

@@ -45,9 +45,9 @@
                         <div class="form-group">
                             <label for="preset-select">Select Preset</label>
                             <select id="preset-select" class="form-select" onchange="toggleCustomInputs()">
-                                <option value="beginner_weight_loss">Alex — Beginner (Weight Loss)</option>
-                                <option value="intermediate_muscle">Sam — Intermediate (Muscle Gain)</option>
-                                <option value="advanced_fitness">Jordan — Advanced (General Fitness)</option>
+                                <option value="beginner_weight_loss">Ahmed — Beginner (Weight Loss)</option>
+                                <option value="intermediate_muscle">Khaled — Intermediate (Muscle Gain)</option>
+                                <option value="advanced_fitness">Omar — Advanced (General Fitness)</option>
                                 <option value="custom">✏️ Custom (Set Your Own)</option>
                             </select>
                         </div>
@@ -62,35 +62,87 @@
                                     <option value="endurance">🏃 Endurance</option>
                                 </select>
                             </div>
-                            <div class="slider-group">
-                                <label>💪 Fitness: <span id="sl-fitness-val">2</span>/9</label>
-                                <input type="range" id="sl-fitness" min="0" max="9" value="2" class="slider" oninput="document.getElementById('sl-fitness-val').textContent=this.value">
+                            <div class="form-group">
+                                <label for="sl-age">📅 Age (years)</label>
+                                <input type="number" id="sl-age" min="18" max="60" value="25" class="form-input">
                             </div>
-                            <div class="slider-group">
-                                <label>⚡ Energy: <span id="sl-energy-val">3</span>/4</label>
-                                <input type="range" id="sl-energy" min="0" max="4" value="3" class="slider" oninput="document.getElementById('sl-energy-val').textContent=this.value">
+                            <div class="form-group">
+                                <label for="sl-bodyweight">⚖️ Body Weight (kg)</label>
+                                <input type="number" id="sl-bodyweight" min="40" max="150" value="80" class="form-input">
                             </div>
-                            <div class="slider-group">
-                                <label>⚖️ Weight: <span id="sl-weight-val">3</span>/4</label>
-                                <input type="range" id="sl-weight" min="0" max="4" value="3" class="slider" oninput="document.getElementById('sl-weight-val').textContent=this.value">
+                            <div class="form-group">
+                                <label for="time-select">⏱️ Time Available</label>
+                                <select id="time-select" class="form-select">
+                                    <option value="30">30 min</option>
+                                    <option value="45" selected>45 min</option>
+                                    <option value="60">60 min</option>
+                                    <option value="90">90 min</option>
+                                </select>
                             </div>
-                            <div class="slider-group">
-                                <label>🦾 Muscle: <span id="sl-muscle-val">1</span>/4</label>
-                                <input type="range" id="sl-muscle" min="0" max="4" value="1" class="slider" oninput="document.getElementById('sl-muscle-val').textContent=this.value">
+                            <div class="form-group">
+                                <label for="equipment-select">🛠️ Equipment</label>
+                                <select id="equipment-select" class="form-select">
+                                    <option value="gym">Gym (Full Equipment)</option>
+                                    <option value="home" selected>Home (Bodyweight + Dumbbells)</option>
+                                    <option value="none">No Equipment (Bodyweight Only)</option>
+                                </select>
                             </div>
-                            <div class="slider-group">
-                                <label>😓 Fatigue: <span id="sl-fatigue-val">0</span>/4</label>
-                                <input type="range" id="sl-fatigue" min="0" max="4" value="0" class="slider" oninput="document.getElementById('sl-fatigue-val').textContent=this.value">
+                            <div class="form-group">
+                                <label for="sl-height">📏 Height (cm)</label>
+                                <input type="number" id="sl-height" min="140" max="210" value="175" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label for="sl-fitness">💪 Fitness Level</label>
+                                <select id="sl-fitness" class="form-select">
+                                    <option value="0">Sedentary — No exercise</option>
+                                    <option value="2" selected>Beginner — Light activity</option>
+                                    <option value="4">Intermediate — Regular training</option>
+                                    <option value="6">Advanced — Intense training</option>
+                                    <option value="8">Athlete — Elite level</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="sl-energy">⚡ Energy Level Now</label>
+                                <select id="sl-energy" class="form-select">
+                                    <option value="0">Exhausted</option>
+                                    <option value="1">Low</option>
+                                    <option value="2">Medium</option>
+                                    <option value="3" selected>Good</option>
+                                    <option value="4">Energetic</option>
+                                </select>
+                            </div>
+                            <!-- Weight Level auto-calculated from Body Weight + Height (BMI) -->
+                            <input type="hidden" id="sl-weight" value="2">
+                            <div class="form-group">
+                                <label for="sl-muscle">🦾 Muscle Level</label>
+                                <select id="sl-muscle" class="form-select">
+                                    <option value="0">Very Weak</option>
+                                    <option value="1" selected>Below Average</option>
+                                    <option value="2">Average</option>
+                                    <option value="3">Strong</option>
+                                    <option value="4">Very Strong</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="sl-fatigue">😓 Current Fatigue</label>
+                                <select id="sl-fatigue" class="form-select">
+                                    <option value="0" selected>Fresh</option>
+                                    <option value="1">Mild</option>
+                                    <option value="2">Moderate</option>
+                                    <option value="3">High</option>
+                                    <option value="4">Extreme</option>
+                                </select>
                             </div>
                         </div>
                         <button class="btn btn-primary" id="btn-setup" onclick="setupProfile()">
                             <span>🔄</span> Apply Profile
                         </button>
                         <div class="profile-info" id="profile-info">
-                            <div class="info-row"><span>Name</span><strong id="info-name">Alex (Beginner)</strong></div>
+                            <div class="info-row"><span>Name</span><strong id="info-name">Ahmed (Beginner)</strong></div>
                             <div class="info-row"><span>Goal</span><strong id="info-goal">Weight Loss</strong></div>
                             <div class="info-row"><span>Age</span><strong id="info-age">28</strong></div>
                             <div class="info-row"><span>Weight</span><strong id="info-weight">92 kg</strong></div>
+                            <div class="info-row"><span>HR<sub>max</sub></span><strong id="info-hrmax">192 bpm</strong></div>
                         </div>
                     </div>
                 </div>
@@ -109,10 +161,25 @@
                             <label for="search-depth">A* Search Depth (days)</label>
                             <input type="number" id="search-depth" class="form-input" value="14" min="5" max="21">
                         </div>
+                        <div class="params-grid">
+                            <div class="form-group compact">
+                                <label for="param-alpha">α (Learning Rate)</label>
+                                <input type="number" id="param-alpha" class="form-input" value="0.1" min="0.01" max="0.5" step="0.01">
+                            </div>
+                            <div class="form-group compact">
+                                <label for="param-gamma">γ (Discount Factor)</label>
+                                <input type="number" id="param-gamma" class="form-input" value="0.95" min="0.5" max="0.99" step="0.01">
+                            </div>
+                            <div class="form-group compact">
+                                <label for="param-epsilon-start">ε Start (Exploration)</label>
+                                <input type="number" id="param-epsilon-start" class="form-input" value="1.0" min="0.1" max="1.0" step="0.05">
+                            </div>
+                            <div class="form-group compact">
+                                <label for="param-epsilon-end">ε End (Min Exploration)</label>
+                                <input type="number" id="param-epsilon-end" class="form-input" value="0.05" min="0.01" max="0.5" step="0.01">
+                            </div>
+                        </div>
                         <div class="params-display">
-                            <div class="param"><span>α (Learning Rate)</span><code>0.1</code></div>
-                            <div class="param"><span>γ (Discount)</span><code>0.95</code></div>
-                            <div class="param"><span>ε (Exploration)</span><code>1.0 → 0.05</code></div>
                             <div class="param"><span>State Space</span><code>~43,750</code></div>
                             <div class="param"><span>Action Space</span><code>28</code></div>
                         </div>
@@ -155,23 +222,30 @@
 
         <!-- ═══════════════ CONTROLS ═══════════════ -->
         <section class="controls-bar">
+            <div class="controls-steps-hint">📋 Steps: Set Profile → Train → Simulate</div>
             <button class="btn btn-accent btn-lg" id="btn-train" onclick="trainAgents()">
-                <span>🚀</span> Train Agents
+                <span>①</span> Train AI
+                <small>Train the RL agents</small>
+            </button>
+            <button class="btn btn-green btn-lg" id="btn-simulate" onclick="simulateStep()">
+                <span>②</span> Simulate Day
+                <small>Run one day</small>
+            </button>
+            <button class="btn btn-outline btn-lg" id="btn-auto-sim" onclick="autoSimulate()">
+                <span>⏩</span> Auto (30 Days)
+                <small>Full month simulation</small>
             </button>
             <button class="btn btn-cyan btn-lg" id="btn-search" onclick="runSearch()">
-                <span>🔍</span> A* Search
+                <span>🔍</span> A* Plan
+                <small>Optimal multi-day plan</small>
             </button>
             <button class="btn btn-amber btn-lg" id="btn-vi" onclick="runValueIteration()">
                 <span>📐</span> Value Iteration
-            </button>
-            <button class="btn btn-green btn-lg" id="btn-simulate" onclick="simulateStep()">
-                <span>▶️</span> Simulate Step
-            </button>
-            <button class="btn btn-outline btn-lg" id="btn-auto-sim" onclick="autoSimulate()">
-                <span>⏩</span> Auto Simulate
+                <small>Exact Bellman solution</small>
             </button>
             <button class="btn btn-ghost btn-lg" id="btn-reset" onclick="resetEnv()">
                 <span>↺</span> Reset
+                <small>Reset environment</small>
             </button>
         </section>
 
@@ -224,11 +298,23 @@
                     <div class="metric-value" id="metric-sim-day">0</div>
                     <div class="metric-label">Simulation Day</div>
                 </div>
+                <div class="metric-card accent">
+                    <div class="metric-value" id="metric-stability">--</div>
+                    <div class="metric-label">Policy Stability %</div>
+                </div>
+                <div class="metric-card green">
+                    <div class="metric-value" id="metric-goal-rate">--</div>
+                    <div class="metric-label">Goal Achievement %</div>
+                </div>
+                <div class="metric-card cyan">
+                    <div class="metric-value" id="metric-coverage">--</div>
+                    <div class="metric-label">State Coverage %</div>
+                </div>
             </div>
         </section>
 
         <!-- ═══════════════ CHARTS ═══════════════ -->
-        <section class="section">
+        <section class="section" id="charts-section">
             <div class="charts-grid">
                 <div class="card chart-card">
                     <div class="card-header"><h3>📊 Learning Curve — Rewards per Episode</h3></div>
@@ -247,26 +333,27 @@
 
         <!-- ═══════════════ RECOMMENDATIONS ═══════════════ -->
         <section class="section">
+            <h2 class="section-title"><span class="section-icon">💡</span> AI Recommendations — What Should I Do Today?</h2>
             <div class="rec-grid">
                 <!-- RL Recommendation -->
                 <div class="card rec-card">
                     <div class="card-header">
-                        <h3>🧠 Q-Learning Recommendation</h3>
-                        <span class="tag tag-purple">RL Agent</span>
+                        <h3>🧠 Q-Learning</h3>
+                        <span class="tag tag-purple">Learns from experience</span>
                     </div>
                     <div class="card-body" id="q-recommendation">
-                        <div class="rec-placeholder">Train the agent first to see recommendations</div>
+                        <div class="rec-placeholder">Click "Train AI" first, then return here for the recommendation.</div>
                     </div>
                 </div>
 
                 <!-- Approx RL Recommendation -->
                 <div class="card rec-card">
                     <div class="card-header">
-                        <h3>⚡ Approximate Q-Learning</h3>
-                        <span class="tag tag-cyan">Feature-Based</span>
+                        <h3>⚡ Approximate Q</h3>
+                        <span class="tag tag-cyan">Generalizes to unseen states</span>
                     </div>
                     <div class="card-body" id="approx-recommendation">
-                        <div class="rec-placeholder">Train the agent first to see recommendations</div>
+                        <div class="rec-placeholder">Uses weighted features instead of a full Q-table. Train to compare.</div>
                     </div>
                 </div>
 
@@ -274,21 +361,21 @@
                 <div class="card rec-card">
                     <div class="card-header">
                         <h3>📐 Value Iteration</h3>
-                        <span class="tag tag-amber">Bellman (L8)</span>
+                        <span class="tag tag-amber">Exact Bellman solution</span>
                     </div>
                     <div class="card-body" id="vi-recommendation">
-                        <div class="rec-placeholder">Run Value Iteration to see optimal policy</div>
+                        <div class="rec-placeholder">Solves the MDP exactly via Bellman equations. Click "Value Iteration".</div>
                     </div>
                 </div>
 
                 <!-- A* Search Plan -->
                 <div class="card rec-card wide">
                     <div class="card-header">
-                        <h3>🔍 A* Search — Optimal Plan</h3>
-                        <span class="tag tag-green">Informed Search</span>
+                        <h3>🔍 A* Search — Multi-Day Plan</h3>
+                        <span class="tag tag-green">Informed heuristic search</span>
                     </div>
                     <div class="card-body" id="search-plan">
-                        <div class="rec-placeholder">Run A* Search to generate an optimal plan</div>
+                        <div class="rec-placeholder">Plans an optimal workout schedule over multiple days. Click "A* Plan".</div>
                     </div>
                 </div>
             </div>
@@ -318,11 +405,11 @@
 
         <!-- ═══════════════ SIMULATION LOG ═══════════════ -->
         <section class="section">
-            <h2 class="section-title"><span class="section-icon">📝</span> Simulation Log</h2>
+            <h2 class="section-title"><span class="section-icon">📝</span> Simulation Log — Day by Day</h2>
             <div class="card">
                 <div class="card-body">
                     <div class="sim-log" id="sim-log">
-                        <div class="log-empty">Run a simulation to see activity here</div>
+                        <div class="log-empty">Click "Simulate Day" or "Auto (30 Days)" to see how the AI recommends workouts and nutrition for each day.</div>
                     </div>
                 </div>
             </div>

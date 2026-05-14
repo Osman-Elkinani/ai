@@ -116,20 +116,39 @@ def train():
     """
     Train Q-Learning and/or Approximate Q-Learning agents.
 
-    Expects JSON: { "episodes": 500, "agent": "both", "resume": false }
+    Expects JSON: { "episodes": 500, "agent": "both", "resume": false,
+                     "hyperparams": {"alpha": 0.1, "gamma": 0.95, ...} }
     Agent options: "q_learning", "approximate", "both"
     resume=true continues training without resetting agents.
     """
+    global q_agent, approx_agent
+
     data = request.get_json() or {}
     episodes = min(data.get('episodes', NUM_EPISODES), 2000)
     agent_type = data.get('agent', 'both')
     resume = data.get('resume', False)
+    hp = data.get('hyperparams', {})
+
+    # Apply hyperparams when starting fresh training
+    if not resume and hp:
+        alpha = hp.get('alpha', 0.1)
+        gamma = hp.get('gamma', 0.95)
+        eps_start = hp.get('epsilon_start', 1.0)
+        eps_end = hp.get('epsilon_end', 0.05)
+        q_agent = QLearningAgent(
+            learning_rate=alpha, discount_factor=gamma,
+            epsilon_start=eps_start, epsilon_end=eps_end
+        )
+        approx_agent = ApproximateQLearningAgent(
+            learning_rate=alpha, discount_factor=gamma,
+            epsilon_start=eps_start, epsilon_end=eps_end
+        )
 
     results = {}
 
     if agent_type in ('q_learning', 'both'):
         train_env = FitnessEnv(user_profile=current_profile)
-        if not resume:
+        if not resume and not hp:
             q_agent.reset_agent()
         start_time = time.time()
         q_metrics = q_agent.train(train_env, num_episodes=episodes)
@@ -138,7 +157,7 @@ def train():
 
     if agent_type in ('approximate', 'both'):
         train_env = FitnessEnv(user_profile=current_profile)
-        if not resume:
+        if not resume and not hp:
             approx_agent.reset_agent()
         start_time = time.time()
         approx_metrics = approx_agent.train(train_env, num_episodes=episodes)

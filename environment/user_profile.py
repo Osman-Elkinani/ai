@@ -17,7 +17,7 @@ class UserProfile:
     # Default profiles for quick testing
     PRESETS = {
         'beginner_weight_loss': {
-            'name': 'Alex (Beginner)',
+            'name': 'Ahmed (Beginner)',
             'age': 28,
             'height_cm': 175,
             'weight_kg': 92,
@@ -39,7 +39,7 @@ class UserProfile:
             },
         },
         'intermediate_muscle': {
-            'name': 'Sam (Intermediate)',
+            'name': 'Khaled (Intermediate)',
             'age': 24,
             'height_cm': 180,
             'weight_kg': 75,
@@ -61,7 +61,7 @@ class UserProfile:
             },
         },
         'advanced_fitness': {
-            'name': 'Jordan (Advanced)',
+            'name': 'Omar (Advanced)',
             'age': 30,
             'height_cm': 170,
             'weight_kg': 68,
@@ -103,6 +103,8 @@ class UserProfile:
         self.weight_kg = config.get('weight_kg', 80)
         self.goal_type = config.get('goal_type', 'general_fitness')
         self.target_weight_kg = config.get('target_weight_kg', 75)
+        self.equipment = config.get('equipment', 'gym')
+        self.time_available = config.get('time_available', 60)
         self.initial_state = config.get('initial_state', {
             'fitness': 3, 'energy': 3, 'weight': 2,
             'muscle': 2, 'fatigue': 0,

@@ -63,15 +63,22 @@ class QLearningAgent:
         self.epsilon_end = epsilon_end
         self.epsilon_decay = epsilon_decay
 
-        # Q-table: defaultdict so unseen (s, a) pairs default to 0.0
-        # This represents Q(s, a) for all state-action pairs
-        self.q_table = defaultdict(float)
+        # Q-table with Optimistic Initialization (prevents hole states)
+        # Instead of 0.0, unseen (s,a) pairs default to V_max.
+        # This forces the agent to explore unvisited states because they
+        # appear maximally rewarding — a systematic exploration incentive.
+        # Reference: "initialize all Q₀(s,a) to an artificially high V_max"
+        self.optimistic_init = 5.0  # V_max: upper bound of expected reward
+        self.q_table = defaultdict(lambda: self.optimistic_init)
 
         # ── Training Metrics ──
         self.episode_rewards = []        # Total reward per episode
         self.episode_steps = []          # Steps per episode
         self.epsilon_history = []        # Epsilon over episodes
         self.states_visited = set()      # Unique states seen
+        self.goals_reached = 0           # Episodes that reached the goal
+        self.state_visit_counts = defaultdict(int)  # N(s) visit frequency
+        self.max_q_delta = 0.0           # Max Q-value change (convergence)
 
     def get_action(self, state, explore=True):
         """
@@ -127,6 +134,7 @@ class QLearningAgent:
             done: Whether the episode ended
         """
         self.states_visited.add(state)
+        self.state_visit_counts[state] += 1
 
         # Current Q-value
         current_q = self.q_table[(state, action)]
@@ -148,7 +156,13 @@ class QLearningAgent:
         td_error = td_target - current_q
 
         # Update Q-value
-        self.q_table[(state, action)] = current_q + self.alpha * td_error
+        new_q = current_q + self.alpha * td_error
+        self.q_table[(state, action)] = new_q
+
+        # Track max Q-value delta for convergence monitoring
+        q_change = abs(new_q - current_q)
+        if q_change > self.max_q_delta:
+            self.max_q_delta = q_change
 
     def decay_epsilon(self):
         """
@@ -181,6 +195,7 @@ class QLearningAgent:
         self.episode_rewards = []
         self.episode_steps = []
         self.epsilon_history = []
+        self.goals_reached = 0
 
         for episode in range(num_episodes):
             state = env.reset()
@@ -202,6 +217,8 @@ class QLearningAgent:
                 steps += 1
 
                 if done or truncated:
+                    if done:
+                        self.goals_reached += 1
                     break
 
             # 4. Decay exploration rate
@@ -218,13 +235,30 @@ class QLearningAgent:
         return self.get_training_metrics()
 
     def get_training_metrics(self):
-        """Return a summary of training performance."""
+        """Return a summary of training performance with research-backed metrics."""
         if not self.episode_rewards:
             return {'status': 'not_trained'}
 
         rewards = self.episode_rewards
+        total_eps = len(rewards)
+
+        # ── Policy Stability: consistency of action selection ──
+        # Measures how often the agent picks the same action for identical states.
+        # High stability = mature, reliable policy (research benchmark).
+        policy_stability = self._compute_policy_stability()
+
+        # ── Goal Achievement Rate: % of episodes reaching the goal ──
+        goal_rate = round((self.goals_reached / total_eps * 100), 1) if total_eps > 0 else 0
+
+        # ── State Coverage: % with sufficient visits (N≥10) ──
+        # Research: a state needs N(s)≥50 visits for reliable Q-values.
+        # We use N≥10 as a practical threshold for 3000-episode training.
+        total_possible = 10 * 5 * 5 * 5 * 5 * 7  # 43,750 states
+        well_covered = sum(1 for n in self.state_visit_counts.values() if n >= 10)
+        coverage = round((well_covered / total_possible * 100), 2)
+
         return {
-            'total_episodes': len(rewards),
+            'total_episodes': total_eps,
             'avg_reward': round(np.mean(rewards), 2),
             'avg_reward_last_100': round(np.mean(rewards[-100:]), 2),
             'best_reward': round(max(rewards), 2),
@@ -232,9 +266,32 @@ class QLearningAgent:
             'final_epsilon': round(self.epsilon, 4),
             'states_explored': len(self.states_visited),
             'q_table_size': len(self.q_table),
+            'policy_stability': policy_stability,
+            'goal_achievement_rate': goal_rate,
+            'state_coverage': coverage,
+            'convergence_delta': round(self.max_q_delta, 4),
             'episode_rewards': [round(r, 2) for r in rewards],
             'epsilon_history': [round(e, 4) for e in self.epsilon_history],
         }
+
+    def _compute_policy_stability(self):
+        """
+        Compute policy stability: for each visited state, check if the
+        best action is consistent (single dominant action).
+        Returns percentage of stable states (0-100).
+        """
+        if not self.states_visited:
+            return 0.0
+        stable = 0
+        sample_states = list(self.states_visited)[:500]  # Sample for performance
+        for state in sample_states:
+            q_vals = [self.q_table[(state, a)] for a in range(self.num_actions)]
+            max_q = max(q_vals)
+            # State is "stable" if only one action has the max Q-value
+            num_best = sum(1 for q in q_vals if abs(q - max_q) < 0.01)
+            if num_best == 1:
+                stable += 1
+        return round((stable / len(sample_states)) * 100, 1)
 
     def get_recommendation(self, state):
         """
@@ -262,9 +319,12 @@ class QLearningAgent:
 
     def reset_agent(self):
         """Reset the agent's learned knowledge."""
-        self.q_table = defaultdict(float)
+        self.q_table = defaultdict(lambda: self.optimistic_init)
         self.epsilon = EPSILON_START
         self.episode_rewards = []
         self.episode_steps = []
         self.epsilon_history = []
         self.states_visited = set()
+        self.goals_reached = 0
+        self.state_visit_counts = defaultdict(int)
+        self.max_q_delta = 0.0
