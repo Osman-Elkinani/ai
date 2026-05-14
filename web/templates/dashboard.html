@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Health & Fitness — Personalized Recommendations</title>
+    <meta name="description" content="AI-powered personalized health and fitness recommendation system using Reinforcement Learning and A* Search">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- ═══════════════ HEADER ═══════════════ -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <span class="logo-icon">🏋️</span>
+                <div>
+                    <h1>AI Health & Fitness</h1>
+                    <p class="subtitle">Personalized Recommendations via Reinforcement Learning</p>
+                </div>
+            </div>
+            <div class="header-badge">
+                <span class="badge-dot"></span>
+                <span>AI System Active</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <!-- ═══════════════ SETUP SECTION ═══════════════ -->
+        <section class="section" id="setup-section">
+            <h2 class="section-title">
+                <span class="section-icon">⚙️</span>
+                Configuration
+            </h2>
+            <div class="config-grid">
+                <!-- User Profile Card -->
+                <div class="card" id="profile-card">
+                    <div class="card-header">
+                        <h3>👤 User Profile</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="preset-select">Select Preset</label>
+                            <select id="preset-select" class="form-select" onchange="toggleCustomInputs()">
+                                <option value="beginner_weight_loss">Alex — Beginner (Weight Loss)</option>
+                                <option value="intermediate_muscle">Sam — Intermediate (Muscle Gain)</option>
+                                <option value="advanced_fitness">Jordan — Advanced (General Fitness)</option>
+                                <option value="custom">✏️ Custom (Set Your Own)</option>
+                            </select>
+                        </div>
+                        <!-- Custom inputs (hidden by default) -->
+                        <div id="custom-inputs" style="display:none;">
+                            <div class="form-group">
+                                <label for="goal-select">Goal Type</label>
+                                <select id="goal-select" class="form-select">
+                                    <option value="weight_loss">📉 Weight Loss</option>
+                                    <option value="muscle_gain">💪 Muscle Gain</option>
+                                    <option value="general_fitness">🎯 General Fitness</option>
+                                    <option value="endurance">🏃 Endurance</option>
+                                </select>
+                            </div>
+                            <div class="slider-group">
+                                <label>💪 Fitness: <span id="sl-fitness-val">2</span>/9</label>
+                                <input type="range" id="sl-fitness" min="0" max="9" value="2" class="slider" oninput="document.getElementById('sl-fitness-val').textContent=this.value">
+                            </div>
+                            <div class="slider-group">
+                                <label>⚡ Energy: <span id="sl-energy-val">3</span>/4</label>
+                                <input type="range" id="sl-energy" min="0" max="4" value="3" class="slider" oninput="document.getElementById('sl-energy-val').textContent=this.value">
+                            </div>
+                            <div class="slider-group">
+                                <label>⚖️ Weight: <span id="sl-weight-val">3</span>/4</label>
+                                <input type="range" id="sl-weight" min="0" max="4" value="3" class="slider" oninput="document.getElementById('sl-weight-val').textContent=this.value">
+                            </div>
+                            <div class="slider-group">
+                                <label>🦾 Muscle: <span id="sl-muscle-val">1</span>/4</label>
+                                <input type="range" id="sl-muscle" min="0" max="4" value="1" class="slider" oninput="document.getElementById('sl-muscle-val').textContent=this.value">
+                            </div>
+                            <div class="slider-group">
+                                <label>😓 Fatigue: <span id="sl-fatigue-val">0</span>/4</label>
+                                <input type="range" id="sl-fatigue" min="0" max="4" value="0" class="slider" oninput="document.getElementById('sl-fatigue-val').textContent=this.value">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" id="btn-setup" onclick="setupProfile()">
+                            <span>🔄</span> Apply Profile
+                        </button>
+                        <div class="profile-info" id="profile-info">
+                            <div class="info-row"><span>Name</span><strong id="info-name">Alex (Beginner)</strong></div>
+                            <div class="info-row"><span>Goal</span><strong id="info-goal">Weight Loss</strong></div>
+                            <div class="info-row"><span>Age</span><strong id="info-age">28</strong></div>
+                            <div class="info-row"><span>Weight</span><strong id="info-weight">92 kg</strong></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Training Config Card -->
+                <div class="card" id="training-card">
+                    <div class="card-header">
+                        <h3>🧠 Training Parameters</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="episodes-input">Training Episodes</label>
+                            <input type="number" id="episodes-input" class="form-input" value="3000" min="50" max="10000" step="50">
+                        </div>
+                        <div class="form-group">
+                            <label for="search-depth">A* Search Depth (days)</label>
+                            <input type="number" id="search-depth" class="form-input" value="14" min="5" max="21">
+                        </div>
+                        <div class="params-display">
+                            <div class="param"><span>α (Learning Rate)</span><code>0.1</code></div>
+                            <div class="param"><span>γ (Discount)</span><code>0.95</code></div>
+                            <div class="param"><span>ε (Exploration)</span><code>1.0 → 0.05</code></div>
+                            <div class="param"><span>State Space</span><code>~43,750</code></div>
+                            <div class="param"><span>Action Space</span><code>28</code></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current State Card -->
+                <div class="card" id="state-card">
+                    <div class="card-header">
+                        <h3>📊 Current State</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="state-bars" id="state-bars">
+                            <div class="state-bar">
+                                <div class="bar-label"><span>💪 Fitness</span><span id="state-fitness-label">Unfit</span></div>
+                                <div class="bar-track"><div class="bar-fill fitness" id="state-fitness-bar" style="width: 20%"></div></div>
+                            </div>
+                            <div class="state-bar">
+                                <div class="bar-label"><span>⚡ Energy</span><span id="state-energy-label">Medium</span></div>
+                                <div class="bar-track"><div class="bar-fill energy" id="state-energy-bar" style="width: 60%"></div></div>
+                            </div>
+                            <div class="state-bar">
+                                <div class="bar-label"><span>⚖️ Weight</span><span id="state-weight-label">Overweight</span></div>
+                                <div class="bar-track"><div class="bar-fill weight" id="state-weight-bar" style="width: 60%"></div></div>
+                            </div>
+                            <div class="state-bar">
+                                <div class="bar-label"><span>🦾 Muscle</span><span id="state-muscle-label">Weak</span></div>
+                                <div class="bar-track"><div class="bar-fill muscle" id="state-muscle-bar" style="width: 20%"></div></div>
+                            </div>
+                            <div class="state-bar">
+                                <div class="bar-label"><span>😓 Fatigue</span><span id="state-fatigue-label">None</span></div>
+                                <div class="bar-track"><div class="bar-fill fatigue" id="state-fatigue-bar" style="width: 0%"></div></div>
+                            </div>
+                        </div>
+                        <div class="state-day" id="state-day">📅 Monday</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════ CONTROLS ═══════════════ -->
+        <section class="controls-bar">
+            <button class="btn btn-accent btn-lg" id="btn-train" onclick="trainAgents()">
+                <span>🚀</span> Train Agents
+            </button>
+            <button class="btn btn-cyan btn-lg" id="btn-search" onclick="runSearch()">
+                <span>🔍</span> A* Search
+            </button>
+            <button class="btn btn-amber btn-lg" id="btn-vi" onclick="runValueIteration()">
+                <span>📐</span> Value Iteration
+            </button>
+            <button class="btn btn-green btn-lg" id="btn-simulate" onclick="simulateStep()">
+                <span>▶️</span> Simulate Step
+            </button>
+            <button class="btn btn-outline btn-lg" id="btn-auto-sim" onclick="autoSimulate()">
+                <span>⏩</span> Auto Simulate
+            </button>
+            <button class="btn btn-ghost btn-lg" id="btn-reset" onclick="resetEnv()">
+                <span>↺</span> Reset
+            </button>
+        </section>
+
+        <!-- ═══════════════ LOADING OVERLAY ═══════════════ -->
+        <div class="loading-overlay" id="loading-overlay">
+            <div class="loading-content">
+                <div class="spinner"></div>
+                <p id="loading-text">Training agents...</p>
+                <div class="progress-container" id="progress-container" style="display:none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <div class="progress-stats">
+                        <span id="progress-episodes">0 / 500 episodes</span>
+                        <span id="progress-pct">0%</span>
+                    </div>
+                    <div class="progress-stats" style="margin-top:0.3rem;">
+                        <span id="progress-reward">🎯 Avg Reward: --</span>
+                        <span id="progress-epsilon">ε: 1.0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════ METRICS CARDS ═══════════════ -->
+        <section class="section" id="metrics-section">
+            <h2 class="section-title"><span class="section-icon">📈</span> Training Metrics</h2>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-value" id="metric-episodes">0</div>
+                    <div class="metric-label">Episodes Trained</div>
+                </div>
+                <div class="metric-card accent">
+                    <div class="metric-value" id="metric-avg-reward">--</div>
+                    <div class="metric-label">Avg Reward (Last 100)</div>
+                </div>
+                <div class="metric-card green">
+                    <div class="metric-value" id="metric-best-reward">--</div>
+                    <div class="metric-label">Best Episode Reward</div>
+                </div>
+                <div class="metric-card cyan">
+                    <div class="metric-value" id="metric-epsilon">1.0</div>
+                    <div class="metric-label">Current ε</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="metric-states">0</div>
+                    <div class="metric-label">States Explored</div>
+                </div>
+                <div class="metric-card amber">
+                    <div class="metric-value" id="metric-sim-day">0</div>
+                    <div class="metric-label">Simulation Day</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════ CHARTS ═══════════════ -->
+        <section class="section">
+            <div class="charts-grid">
+                <div class="card chart-card">
+                    <div class="card-header"><h3>📊 Learning Curve — Rewards per Episode</h3></div>
+                    <div class="card-body chart-container">
+                        <canvas id="learningCurveChart"></canvas>
+                    </div>
+                </div>
+                <div class="card chart-card">
+                    <div class="card-header"><h3>📈 Fitness Progress Over Simulation</h3></div>
+                    <div class="card-body chart-container">
+                        <canvas id="fitnessProgressChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════ RECOMMENDATIONS ═══════════════ -->
+        <section class="section">
+            <div class="rec-grid">
+                <!-- RL Recommendation -->
+                <div class="card rec-card">
+                    <div class="card-header">
+                        <h3>🧠 Q-Learning Recommendation</h3>
+                        <span class="tag tag-purple">RL Agent</span>
+                    </div>
+                    <div class="card-body" id="q-recommendation">
+                        <div class="rec-placeholder">Train the agent first to see recommendations</div>
+                    </div>
+                </div>
+
+                <!-- Approx RL Recommendation -->
+                <div class="card rec-card">
+                    <div class="card-header">
+                        <h3>⚡ Approximate Q-Learning</h3>
+                        <span class="tag tag-cyan">Feature-Based</span>
+                    </div>
+                    <div class="card-body" id="approx-recommendation">
+                        <div class="rec-placeholder">Train the agent first to see recommendations</div>
+                    </div>
+                </div>
+
+                <!-- Value Iteration Recommendation -->
+                <div class="card rec-card">
+                    <div class="card-header">
+                        <h3>📐 Value Iteration</h3>
+                        <span class="tag tag-amber">Bellman (L8)</span>
+                    </div>
+                    <div class="card-body" id="vi-recommendation">
+                        <div class="rec-placeholder">Run Value Iteration to see optimal policy</div>
+                    </div>
+                </div>
+
+                <!-- A* Search Plan -->
+                <div class="card rec-card wide">
+                    <div class="card-header">
+                        <h3>🔍 A* Search — Optimal Plan</h3>
+                        <span class="tag tag-green">Informed Search</span>
+                    </div>
+                    <div class="card-body" id="search-plan">
+                        <div class="rec-placeholder">Run A* Search to generate an optimal plan</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════ COMPARISON TABLE ═══════════════ -->
+        <section class="section" id="comparison-section" style="display:none;">
+            <h2 class="section-title"><span class="section-icon">⚔️</span> Performance Comparison</h2>
+            <div class="card">
+                <div class="card-body">
+                    <table class="comparison-table" id="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>Metric</th>
+                                <th>Q-Learning</th>
+                                <th>Approx Q-Learning</th>
+                                <th>Value Iteration</th>
+                                <th>A* Search</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comparison-tbody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════ SIMULATION LOG ═══════════════ -->
+        <section class="section">
+            <h2 class="section-title"><span class="section-icon">📝</span> Simulation Log</h2>
+            <div class="card">
+                <div class="card-body">
+                    <div class="sim-log" id="sim-log">
+                        <div class="log-empty">Run a simulation to see activity here</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ═══════════════ FOOTER ═══════════════ -->
+    <footer class="footer">
+        <p>AI for Personalized Health & Fitness Recommendations — University AI Project</p>
+        <p class="footer-sub">Built with Q-Learning, Approximate Q-Learning, Value Iteration, and A* Search | Python + Flask + Chart.js</p>
+    </footer>
+
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

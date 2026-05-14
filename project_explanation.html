@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>شرح المشروع — AI Health &amp; Fitness</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Cairo',sans-serif;background:#0a0a1a;color:#e0e0ef;line-height:1.85;padding:2rem}
+.container{max-width:960px;margin:0 auto}
+h1{font-size:2rem;font-weight:800;text-align:center;background:linear-gradient(135deg,#a78bfa,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.3rem}
+.subtitle{text-align:center;color:#8b8fa3;font-size:1rem;margin-bottom:2.5rem}
+h2{font-size:1.35rem;font-weight:700;color:#a78bfa;margin:2.5rem 0 1rem;padding-bottom:.5rem;border-bottom:2px solid rgba(167,139,250,.2)}
+h3{font-size:1.05rem;font-weight:600;color:#06b6d4;margin:1.5rem 0 .6rem}
+p{margin:.6rem 0;color:#c4c7d4}
+strong{color:#e8eaf0}
+hr{border:none;border-top:1px solid rgba(255,255,255,.06);margin:2rem 0}
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.88rem}
+th{background:rgba(124,58,237,.15);color:#a78bfa;padding:.6rem .8rem;text-align:right;font-weight:600;border-bottom:2px solid rgba(124,58,237,.2)}
+td{padding:.5rem .8rem;border-bottom:1px solid rgba(255,255,255,.05);color:#c4c7d4}
+tr:hover td{background:rgba(255,255,255,.02)}
+code{font-family:'JetBrains Mono',monospace;background:rgba(255,255,255,.07);padding:.15rem .4rem;border-radius:4px;font-size:.85rem;color:#a78bfa;direction:ltr;unicode-bidi:embed}
+pre{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:1.2rem;margin:1rem 0;overflow-x:auto;direction:ltr;text-align:left}
+pre code{background:none;padding:0;color:#c4c7d4;font-size:.82rem;line-height:1.7}
+ul,ol{padding-right:1.5rem;margin:.6rem 0}
+li{margin:.3rem 0;color:#c4c7d4}
+.card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:1.5rem;margin:1rem 0}
+.eq{text-align:center;direction:ltr;font-family:'JetBrains Mono',monospace;font-size:1rem;color:#f59e0b;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.15);border-radius:10px;padding:.8rem;margin:1rem 0}
+.note{background:rgba(6,182,212,.08);border-right:4px solid #06b6d4;border-radius:0 10px 10px 0;padding:.8rem 1.2rem;margin:1rem 0;color:#a0d8ef}
+.tag{display:inline-block;padding:.15rem .6rem;border-radius:100px;font-size:.72rem;font-weight:600;margin-left:.3rem}
+.tag-purple{background:rgba(124,58,237,.2);color:#a78bfa}
+.tag-cyan{background:rgba(6,182,212,.2);color:#06b6d4}
+.tag-green{background:rgba(16,185,129,.2);color:#10b981}
+.tag-amber{background:rgba(245,158,11,.2);color:#f59e0b}
+@media print{body{background:#fff;color:#222;padding:1cm}h1{-webkit-text-fill-color:#4f46e5}h2{color:#4f46e5;border-color:#ddd}h3{color:#0891b2}pre,code,.card{border-color:#ddd;background:#f8f8f8}th{background:#eef;color:#333}td,p,li{color:#333}.eq{background:#fff8e7;color:#92400e}}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🏋️ شرح المشروع من الألف للياء</h1>
+<p class="subtitle">AI for Personalized Health &amp; Fitness Recommendations</p>
+
+<!-- 1 -->
+<h2>📌 1. فكرة المشروع</h2>
+<p>المشروع عبارة عن <strong>نظام ذكاء اصطناعي</strong> يعطي المستخدم توصيات شخصية للتمارين والتغذية بناءً على حالته الصحية وأهدافه.</p>
+<div class="note">
+<strong>مثال:</strong> لو شخص وزنه زائد وهدفه ينزل وزن، النظام يقول له:<br>
+• "اليوم اعمل جري + نظام غذائي قليل سعرات"<br>
+• "بكرا اعمل مشي + بروتين عالي"
+</div>
+<p>النظام يتعلم مع الوقت أي توصيات هي الأفضل عن طريق <strong>التعلم المعزز (Reinforcement Learning)</strong>.</p>
+
+<hr>
+
+<!-- 2 -->
+<h2>📌 2. التقنيات المستخدمة (ربطها بالمحاضرات)</h2>
+<table>
+<thead><tr><th>التقنية</th><th>المحاضرة</th><th>الملف</th><th>الوظيفة</th></tr></thead>
+<tbody>
+<tr><td><strong>MDP</strong> <span class="tag tag-purple">L7-8</span></td><td>محاضرة 7 و 8</td><td><code>fitness_env.py</code></td><td>نمذجة المشكلة كـ MDP</td></tr>
+<tr><td><strong>Value Iteration</strong> <span class="tag tag-amber">L8</span></td><td>محاضرة 8</td><td><code>value_iteration_agent.py</code></td><td>حل MDP بمعادلات بلمان</td></tr>
+<tr><td><strong>A* Search</strong> <span class="tag tag-green">L3</span></td><td>محاضرة 3</td><td><code>search_agent.py</code></td><td>إيجاد أفضل خطة تمارين</td></tr>
+<tr><td><strong>Q-Learning</strong> <span class="tag tag-purple">L9</span></td><td>محاضرة 9</td><td><code>q_learning_agent.py</code></td><td>تعلم أفضل قرار بدون نموذج</td></tr>
+<tr><td><strong>Approximate Q-Learning</strong> <span class="tag tag-cyan">L10</span></td><td>محاضرة 10</td><td><code>approx_q_agent.py</code></td><td>تعلم باستخدام features</td></tr>
+<tr><td><strong>Epsilon-Greedy</strong> <span class="tag tag-cyan">L10</span></td><td>محاضرة 10</td><td>كل الـ agents</td><td>موازنة الاستكشاف والاستغلال</td></tr>
+</tbody></table>
+
+<hr>
+
+<!-- 3 -->
+<h2>📌 3. هيكل المشروع</h2>
+<pre><code>Project/
+├── run.py                     ← نقطة التشغيل الرئيسية
+├── config.py                  ← كل الإعدادات والثوابت
+├── requirements.txt           ← المكتبات المطلوبة
+├── environment/
+│   ├── fitness_env.py         ← بيئة المحاكاة (MDP)
+│   └── user_profile.py        ← ملفات المستخدمين
+├── agents/
+│   ├── q_learning_agent.py    ← عميل Q-Learning
+│   ├── approx_q_agent.py      ← عميل Approximate Q-Learning
+│   ├── value_iteration_agent.py ← عميل Value Iteration
+│   └── search_agent.py        ← عميل A* Search
+├── data/
+│   ├── workouts.py            ← أنواع التمارين
+│   └── nutrition.py           ← خطط التغذية
+└── web/
+    ├── app.py                 ← سيرفر Flask
+    ├── templates/dashboard.html
+    └── static/css/ + js/</code></pre>
+
+<hr>
+
+<!-- 4 -->
+<h2>📌 4. شرح الـ MDP (محاضرة 7-8)</h2>
+<p><strong>Markov Decision Process</strong> = طريقة رياضية لنمذجة مشاكل اتخاذ القرار. يتكون من 5 عناصر:</p>
+
+<h3>4.1 الحالات (States) — فضاء الحالات ~43,750 حالة</h3>
+<p>كل حالة عبارة عن <strong>tuple</strong> من 6 قيم:</p>
+<div class="eq">state = (fitness, energy, weight, muscle, fatigue, day)</div>
+<table>
+<thead><tr><th>المتغير</th><th>القيم</th><th>المعنى</th></tr></thead>
+<tbody>
+<tr><td><code>fitness</code></td><td>0-9</td><td>مستوى اللياقة القلبية</td></tr>
+<tr><td><code>energy</code></td><td>0-4</td><td>مستوى الطاقة</td></tr>
+<tr><td><code>weight</code></td><td>0-4</td><td>حالة الوزن (نحيف → سمين)</td></tr>
+<tr><td><code>muscle</code></td><td>0-4</td><td>مستوى العضلات</td></tr>
+<tr><td><code>fatigue</code></td><td>0-4</td><td>مستوى الإرهاق</td></tr>
+<tr><td><code>day</code></td><td>0-6</td><td>يوم الأسبوع</td></tr>
+</tbody></table>
+<p><strong>حجم فضاء الحالات</strong> = 10 × 5 × 5 × 5 × 5 × 7 = <strong>43,750 حالة</strong></p>
+
+<h3>4.2 الأفعال (Actions) — 28 فعل</h3>
+<p>كل فعل = <strong>تمرين + نظام غذائي</strong></p>
+<table>
+<thead><tr><th>التمرين</th><th>الشدة</th><th>السعرات</th></tr></thead>
+<tbody>
+<tr><td>😴 Rest</td><td>0</td><td>0</td></tr>
+<tr><td>🚶 Walking</td><td>2</td><td>150</td></tr>
+<tr><td>🏃 Jogging</td><td>5</td><td>350</td></tr>
+<tr><td>🔥 HIIT</td><td>9</td><td>500</td></tr>
+<tr><td>🏋️ Strength</td><td>7</td><td>300</td></tr>
+<tr><td>🏊 Swimming</td><td>6</td><td>400</td></tr>
+<tr><td>🚴 Cycling</td><td>6</td><td>380</td></tr>
+</tbody></table>
+<table>
+<thead><tr><th>الخطة الغذائية</th><th>السعرات</th><th>التأثير</th></tr></thead>
+<tbody>
+<tr><td>📉 Caloric Deficit</td><td>1600</td><td>نزول وزن</td></tr>
+<tr><td>⚖️ Maintenance</td><td>2200</td><td>ثبات</td></tr>
+<tr><td>📈 Caloric Surplus</td><td>2800</td><td>زيادة عضل</td></tr>
+<tr><td>🥩 High Protein</td><td>2200</td><td>بناء عضلات</td></tr>
+</tbody></table>
+<p><strong>المجموع</strong> = 7 × 4 = <strong>28 فعل ممكن</strong></p>
+
+<h3>4.3 دالة الانتقال T(s, a, s') — عشوائية</h3>
+<pre><code># التأثيرات المتوقعة + ضوضاء عشوائية (±20%)
+delta_fitness = workout_effect + random.uniform(-0.2, 0.2)
+delta_energy = workout_effect + nutrition_effect + noise
+new_fitness = clamp(fitness + delta_fitness, 0, 9)</code></pre>
+<p><strong>لماذا عشوائية؟</strong> لأن في الواقع نتائج التمارين ما تكون مضمونة 100%.</p>
+
+<h3>4.4 دالة المكافأة R(s, a, s')</h3>
+<div class="card">
+<strong>هدف نزول الوزن:</strong><br>
++3.0 لكل نقطة نزول وزن &nbsp;|&nbsp; +1.5 لكل نقطة زيادة لياقة &nbsp;|&nbsp; +0.5 لو الطاقة ≥ متوسطة<br>
+-3.0 لو الإرهاق عالي جداً &nbsp;|&nbsp; -2.0 لو الطاقة منخفضة جداً &nbsp;|&nbsp; -0.1 عقوبة زمنية
+</div>
+
+<h3>4.5 معامل الخصم γ = 0.95</h3>
+<p>نهتم بالمكافآت المستقبلية لكن نفضل المكافآت القريبة.</p>
+
+<hr>
+
+<!-- 5 -->
+<h2>📌 5. شرح Q-Learning (محاضرة 9)</h2>
+<p>خوارزمية <strong>Model-Free</strong> تتعلم قيمة كل (حالة، فعل) بدون ما تعرف كيف البيئة تشتغل.</p>
+<p>نبني جدول <strong>Q-table</strong> يخزن <code>Q(s, a)</code> = المكافأة المتوقعة.</p>
+
+<h3>قاعدة التحديث:</h3>
+<div class="eq">Q(s, a) ← Q(s, a) + α × [r + γ × max_a' Q(s', a') - Q(s, a)]</div>
+<ul>
+<li><code>α = 0.1</code> → معدل التعلم</li>
+<li><code>r</code> → المكافأة الفورية</li>
+<li><code>γ = 0.95</code> → معامل الخصم</li>
+<li><code>max_a' Q(s', a')</code> → أفضل قيمة مستقبلية</li>
+<li>الفرق يسمى <strong>TD Error</strong></li>
+</ul>
+
+<h3>سياسة Epsilon-Greedy (محاضرة 10):</h3>
+<div class="card">
+بنسبة ε → اختر فعل <strong>عشوائي</strong> (استكشاف)<br>
+بنسبة 1-ε → اختر <strong>أفضل</strong> فعل (استغلال)<br><br>
+ε يبدأ = 1.0 → ينزل تدريجياً → ينتهي ≈ 0.05
+</div>
+
+<h3>دورة التدريب:</h3>
+<pre><code>for episode in range(500):           # 500 حلقة تدريب
+    state = env.reset()              # 1. ابدأ من البداية
+    for step in range(30):           # 2. لكل يوم (30 يوم)
+        action = epsilon_greedy()    #    اختر فعل
+        next_state, reward = env.step(action)  # نفذ
+        Q[s,a] += α*(r + γ*max(Q[s']) - Q[s,a]) # حدّث
+        state = next_state
+    decay_epsilon()                  # 3. قلل الاستكشاف</code></pre>
+
+<hr>
+
+<!-- 6 -->
+<h2>📌 6. شرح Approximate Q-Learning (محاضرة 10)</h2>
+<p><strong>المشكلة:</strong> الـ Q-table حجمه = 43,750 × 28 = <strong>1.2 مليون</strong> خانة!</p>
+<p><strong>الحل:</strong> نستخدم دالة تقريبية:</p>
+<div class="eq">Q(s, a) ≈ w₁·f₁(s,a) + w₂·f₂(s,a) + ... + w₁₂·f₁₂(s,a)</div>
+
+<h3>الـ Features المستخدمة:</h3>
+<table>
+<thead><tr><th>#</th><th>الخاصية</th><th>الوصف</th></tr></thead>
+<tbody>
+<tr><td>f1</td><td>fitness / 9</td><td>مستوى اللياقة (مُطبّع)</td></tr>
+<tr><td>f2</td><td>energy / 4</td><td>مستوى الطاقة (مُطبّع)</td></tr>
+<tr><td>f3</td><td>(target-fitness)/10</td><td>الفجوة للهدف في اللياقة</td></tr>
+<tr><td>f4</td><td>(target-muscle)/5</td><td>الفجوة للهدف في العضلات</td></tr>
+<tr><td>f5</td><td>|weight-target|/5</td><td>فجوة الوزن</td></tr>
+<tr><td>f6</td><td>fatigue / 4</td><td>مستوى الإرهاق</td></tr>
+<tr><td>f7-f11</td><td>is_cardio, strength...</td><td>نوع التمرين والتغذية</td></tr>
+<tr><td>f12</td><td>1 (bias)</td><td>ثابت الانحياز</td></tr>
+</tbody></table>
+
+<h3>قاعدة تحديث الأوزان:</h3>
+<div class="eq">wᵢ ← wᵢ + α × difference × fᵢ(s, a)</div>
+<p><strong>الميزة:</strong> بدل 1.4 مليون قيمة ← <strong>12 وزن فقط!</strong> + يعمم على حالات جديدة.</p>
+
+<hr>
+
+<!-- 7 -->
+<h2>📌 7. شرح Value Iteration (محاضرة 8)</h2>
+<p>خوارزمية <strong>Model-Based</strong> تحل الـ MDP بشكل <strong>دقيق</strong> باستخدام <strong>معادلات بلمان</strong>.</p>
+
+<h3>معادلة بلمان:</h3>
+<div class="eq">V*(s) = max_a [ R(s, a, s') + γ · V*(s') ]</div>
+<p><strong>المعنى:</strong> قيمة أي حالة = أفضل مكافأة فورية + قيمة أفضل حالة مستقبلية مخصومة.</p>
+
+<h3>الخوارزمية:</h3>
+<pre><code>1. حط V(s) = 0 لكل الحالات (6,250 حالة)
+2. كرر حتى التقارب:
+   لكل حالة s:
+     V(s) ← max_a [ R(s,a,s') + γ · V(s') ]
+3. استخرج السياسة:
+   π(s) = argmax_a [ R(s,a,s') + γ · V(s') ]</code></pre>
+
+<h3>الفرق عن Q-Learning:</h3>
+<table>
+<thead><tr><th></th><th>Value Iteration</th><th>Q-Learning</th></tr></thead>
+<tbody>
+<tr><td>يحتاج نموذج؟</td><td>✅ نعم (model-based)</td><td>❌ لا (model-free)</td></tr>
+<tr><td>دقة الحل</td><td>✅ أمثل (exact)</td><td>⚠️ تقريبي</td></tr>
+<tr><td>يتعلم من التجربة؟</td><td>❌ لا</td><td>✅ نعم</td></tr>
+<tr><td>عدد الحالات المحسوبة</td><td>كل الحالات (6,250)</td><td>فقط المزارة</td></tr>
+</tbody></table>
+
+<hr>
+
+<!-- 8 -->
+<h2>📌 8. شرح A* Search (محاضرة 3)</h2>
+<p>خوارزمية بحث <strong>مُوجَّه</strong> تجد أقصر/أفضل مسار من البداية للهدف.</p>
+<div class="eq">f(n) = g(n) + h(n)</div>
+<ul>
+<li><strong>g(n)</strong>: التكلفة الفعلية من البداية للنقطة n</li>
+<li><strong>h(n)</strong>: تقدير المسافة المتبقية للهدف (heuristic)</li>
+<li><strong>f(n)</strong>: الأولوية الكلية (الأقل = الأفضل)</li>
+</ul>
+
+<h3>خوارزمية A* (Graph Search):</h3>
+<pre><code>1. أضف نقطة البداية للـ frontier (priority queue)
+2. أنشئ closed set فارغة (Graph Search)
+3. طالما الـ frontier مو فاضي:
+   a. اسحب النقطة ذات أقل f(n)
+   b. لو وصلت للهدف → ارجع الحل
+   c. لو زرتها قبل → تخطاها
+   d. أضفها للـ closed set
+   e. لكل فعل ممكن (28 فعل):
+      - احسب الحالة الجديدة
+      - احسب g و h الجديدة
+      - أضف للـ frontier</code></pre>
+<p><strong>الـ heuristic هي admissible</strong> = لا تبالغ أبداً → تضمن أن A* يجد الحل الأمثل.</p>
+
+<hr>
+
+<!-- 9 -->
+<h2>📌 9. النتائج والمقارنة</h2>
+<table>
+<thead><tr><th>المقياس</th><th>Q-Learning</th><th>Approx Q</th><th>Value Iteration</th><th>A* Search</th></tr></thead>
+<tbody>
+<tr><td>يحتاج نموذج؟</td><td>❌ لا</td><td>❌ لا</td><td>✅ نعم</td><td>✅ نعم</td></tr>
+<tr><td>يتعامل مع العشوائية</td><td>✅ نعم</td><td>✅ نعم</td><td>⚠️ حتمي</td><td>❌ لا</td></tr>
+<tr><td>قابلية التعميم</td><td>❌ ضعيفة</td><td>✅ عالية</td><td>❌ ضعيفة</td><td>❌ ضعيفة</td></tr>
+<tr><td>التكيف</td><td>✅ عالي</td><td>✅ عالي</td><td>❌ منخفض</td><td>❌ منخفض</td></tr>
+</tbody></table>
+
+<h3>الملاحظات:</h3>
+<ul>
+<li><strong>Approximate Q-Learning</strong> حقق أفضل أداء لأنه يعمم على حالات جديدة</li>
+<li><strong>Value Iteration</strong> يعطي الحل الأمثل لكن يحتاج نموذج البيئة</li>
+<li><strong>A* Search</strong> وجد الخطة المثلى بسرعة لكن لا يتكيف مع التغيير</li>
+<li><strong>Q-Learning</strong> جيد لكن يحتاج وقت أطول لاستكشاف الحالات</li>
+</ul>
+
+<hr>
+
+<!-- 10 - Environment -->
+<h2>📌 10. شرح البيئة (fitness_env.py)</h2>
+<p>البيئة تتبع واجهة <strong>OpenAI Gym</strong> بدالتين رئيسيتين:</p>
+<h3><code>reset()</code> — إعادة تعيين البيئة</h3>
+<pre><code>def reset(self):
+    self.state = (fitness=2, energy=3, weight=3, muscle=1, fatigue=0, day=0)
+    return self.state</code></pre>
+<h3><code>step(action)</code> — تنفيذ خطوة واحدة (يوم واحد)</h3>
+<pre><code>def step(self, action):
+    # 1. فك تشفير الفعل
+    workout_idx = action // 4    # أي تمرين
+    nutrition_idx = action % 4   # أي تغذية
+
+    # 2. احسب التغييرات (مع ضوضاء عشوائية)
+    delta = workout_effects + nutrition_effects + noise
+
+    # 3. طبق التغييرات على الحالة
+    new_state = clamp(old_state + delta)
+
+    # 4. احسب المكافأة
+    reward = calculate_reward(old, new, goal)
+
+    # 5. تحقق هل الهدف تحقق
+    done = is_goal_reached()
+
+    return new_state, reward, done, truncated, info</code></pre>
+
+<hr>
+
+<!-- 11 - User Profiles -->
+<h2>📌 11. ملفات المستخدمين (user_profile.py)</h2>
+<p>3 ملفات شخصية جاهزة + إمكانية إنشاء ملف مخصص من الداشبورد:</p>
+<table>
+<thead><tr><th>الملف</th><th>الاسم</th><th>الهدف</th><th>الحالة الأولية</th></tr></thead>
+<tbody>
+<tr><td>beginner_weight_loss</td><td>Alex</td><td>نزول وزن</td><td>fitness=2, weight=3</td></tr>
+<tr><td>intermediate_muscle</td><td>Sam</td><td>بناء عضل</td><td>fitness=5, muscle=2</td></tr>
+<tr><td>advanced_fitness</td><td>Jordan</td><td>لياقة عامة</td><td>fitness=6, muscle=3</td></tr>
+<tr><td><strong>Custom</strong></td><td>مخصص</td><td>يختار المستخدم</td><td>sliders تفاعلية</td></tr>
+</tbody></table>
+
+<hr>
+
+<!-- 12 - Dashboard -->
+<h2>📌 12. شرح الداشبورد (Dashboard)</h2>
+<p>سيرفر <strong>Flask</strong> يوفر API endpoints:</p>
+<table>
+<thead><tr><th>Endpoint</th><th>الوظيفة</th></tr></thead>
+<tbody>
+<tr><td><code>GET /</code></td><td>عرض صفحة الداشبورد</td></tr>
+<tr><td><code>POST /api/setup</code></td><td>إعداد ملف المستخدم</td></tr>
+<tr><td><code>POST /api/train</code></td><td>تدريب الـ agents (مع resume)</td></tr>
+<tr><td><code>POST /api/search</code></td><td>تشغيل A* Search</td></tr>
+<tr><td><code>POST /api/value_iteration</code></td><td>تشغيل Value Iteration</td></tr>
+<tr><td><code>POST /api/simulate</code></td><td>محاكاة خطوة واحدة</td></tr>
+<tr><td><code>GET /api/recommend</code></td><td>الحصول على التوصيات</td></tr>
+<tr><td><code>POST /api/reset</code></td><td>إعادة تعيين البيئة</td></tr>
+</tbody></table>
+<h3>الداشبورد يعرض:</h3>
+<ol>
+<li><strong>إعدادات المستخدم</strong> — اختيار ملف شخصي أو إنشاء مخصص (sliders)</li>
+<li><strong>أزرار التحكم</strong> — تدريب / بحث / Value Iteration / محاكاة</li>
+<li><strong>منحنى التعلم</strong> — رسم بياني يتحدث لايف أثناء التدريب</li>
+<li><strong>تقدم اللياقة</strong> — رسم بياني للمتغيرات عبر الزمن</li>
+<li><strong>التوصيات</strong> — ما ينصح به كل agent</li>
+<li><strong>جدول المقارنة</strong> — مقارنة أداء الطرق الأربع</li>
+<li><strong>سجل المحاكاة</strong> — تفاصيل كل يوم</li>
+</ol>
+
+<hr>
+
+<!-- 13 - طريقة التشغيل -->
+<h2>📌 13. طريقة التشغيل</h2>
+<pre><code># 1. تنصيب المكتبات
+pip install -r requirements.txt
+
+# 2. تشغيل الداشبورد
+python run.py
+# افتح المتصفح: http://127.0.0.1:5000
+
+# أو تشغيل العرض السريع (بدون متصفح)
+python run.py --cli</code></pre>
+
+<h3>خطوات الاستخدام:</h3>
+<ol>
+<li><strong>اختر ملف شخصي</strong> أو أنشئ Custom واضغط "Apply Profile"</li>
+<li><strong>اضغط "Train Agents"</strong> — شاهد Progress Bar والرسم البياني لايف (~1 دقيقة)</li>
+<li><strong>اضغط "Value Iteration"</strong> — يحل الـ MDP بمعادلات بلمان</li>
+<li><strong>اضغط "A* Search"</strong> — يظهر الخطة المثلى</li>
+<li><strong>اضغط "Simulate"</strong> — شاهد النتائج يوم بيوم</li>
+</ol>
+
+<hr>
+
+<!-- 14 - ملخص الملفات -->
+<h2>📌 14. ملخص الملفات المهمة</h2>
+<table>
+<thead><tr><th>الملف</th><th>الوظيفة</th></tr></thead>
+<tbody>
+<tr><td><code>config.py</code></td><td>كل الثوابت والإعدادات: أحجام فضاءات الحالة، معاملات التعلم</td></tr>
+<tr><td><code>data/workouts.py</code></td><td>قاعدة بيانات التمارين الـ 7 مع تأثيراتها</td></tr>
+<tr><td><code>data/nutrition.py</code></td><td>قاعدة بيانات خطط التغذية الـ 4</td></tr>
+<tr><td><code>environment/fitness_env.py</code></td><td><strong>أهم ملف</strong> — البيئة كاملة: الحالات، الانتقالات، المكافآت</td></tr>
+<tr><td><code>environment/user_profile.py</code></td><td>ملفات المستخدمين (3 جاهزة + custom)</td></tr>
+<tr><td><code>agents/q_learning_agent.py</code></td><td>Q-Learning مع Q-table و epsilon-greedy</td></tr>
+<tr><td><code>agents/approx_q_agent.py</code></td><td>Approximate Q-Learning مع features و weights</td></tr>
+<tr><td><code>agents/value_iteration_agent.py</code></td><td>Value Iteration مع معادلات بلمان</td></tr>
+<tr><td><code>agents/search_agent.py</code></td><td>A* Search مع heuristic و Graph Search</td></tr>
+<tr><td><code>web/app.py</code></td><td>سيرفر Flask مع 8 API endpoints</td></tr>
+<tr><td><code>run.py</code></td><td>نقطة التشغيل — وضعين: web و cli</td></tr>
+</tbody></table>
+
+</div>
+</body>
+</html>
+

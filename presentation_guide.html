@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>دليل العرض — AI Health &amp; Fitness</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Cairo',sans-serif;background:#0a0a1a;color:#e0e0ef;line-height:1.85;padding:2rem}
+.container{max-width:960px;margin:0 auto}
+h1{font-size:2rem;font-weight:800;text-align:center;background:linear-gradient(135deg,#f59e0b,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:2.5rem}
+h2{font-size:1.35rem;font-weight:700;color:#f59e0b;margin:2.5rem 0 1rem;padding-bottom:.5rem;border-bottom:2px solid rgba(245,158,11,.2)}
+h3{font-size:1.05rem;font-weight:600;color:#06b6d4;margin:1.5rem 0 .6rem}
+p{margin:.6rem 0;color:#c4c7d4}
+strong{color:#e8eaf0}
+hr{border:none;border-top:1px solid rgba(255,255,255,.06);margin:2rem 0}
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.88rem}
+th{background:rgba(245,158,11,.12);color:#f59e0b;padding:.6rem .8rem;text-align:right;font-weight:600;border-bottom:2px solid rgba(245,158,11,.2)}
+td{padding:.5rem .8rem;border-bottom:1px solid rgba(255,255,255,.05);color:#c4c7d4}
+code{font-family:'JetBrains Mono',monospace;background:rgba(255,255,255,.07);padding:.15rem .4rem;border-radius:4px;font-size:.85rem;color:#a78bfa;direction:ltr;unicode-bidi:embed}
+pre{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:1.2rem;margin:1rem 0;overflow-x:auto;direction:ltr;text-align:left}
+pre code{background:none;padding:0;color:#c4c7d4;font-size:.85rem;line-height:1.7}
+ul,ol{padding-right:1.5rem;margin:.6rem 0}
+li{margin:.3rem 0;color:#c4c7d4}
+
+.step{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:1.5rem;margin:1.5rem 0;position:relative}
+.step-num{position:absolute;top:-12px;right:20px;background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;font-weight:800;font-size:.8rem;padding:.2rem .8rem;border-radius:100px}
+.say{background:rgba(16,185,129,.06);border-right:4px solid #10b981;border-radius:0 12px 12px 0;padding:1rem 1.2rem;margin:.8rem 0;color:#a0efcf;font-size:.92rem;line-height:2}
+.say::before{content:'💬 ';font-size:1.1rem}
+.action{background:rgba(124,58,237,.08);border-right:4px solid #a78bfa;border-radius:0 12px 12px 0;padding:.6rem 1.2rem;margin:.8rem 0;color:#c4b5fd;font-weight:600}
+.action::before{content:'👆 '}
+.wait{background:rgba(245,158,11,.08);border-right:4px solid #f59e0b;border-radius:0 12px 12px 0;padding:.6rem 1.2rem;margin:.8rem 0;color:#fcd34d}
+.wait::before{content:'⏳ '}
+
+.qa{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:1.2rem;margin:1rem 0}
+.qa-q{color:#ef4444;font-weight:700;font-size:.95rem;margin-bottom:.5rem}
+.qa-q::before{content:'❓ '}
+.qa-a{color:#a0efcf;padding-right:1rem;line-height:1.9}
+.qa-a::before{content:'✅ '}
+
+.time-badge{display:inline-block;background:rgba(245,158,11,.15);color:#f59e0b;padding:.2rem .6rem;border-radius:100px;font-size:.75rem;font-weight:600;margin-right:.5rem}
+
+@media print{body{background:#fff;color:#222;padding:1cm}h1{-webkit-text-fill-color:#b45309}h2{color:#b45309;border-color:#ddd}h3{color:#0891b2}.step{border-color:#ddd;background:#fafafa}.say{background:#f0fdf4;border-color:#16a34a;color:#166534}.action{background:#f5f3ff;border-color:#7c3aed;color:#5b21b6}.wait{background:#fffbeb;border-color:#d97706;color:#92400e}.qa{background:#f8f8f8;border-color:#ddd}.qa-q{color:#dc2626}.qa-a{color:#166534}pre,code{background:#f3f4f6;border-color:#ddd}th{background:#fef3c7;color:#92400e}td,p,li{color:#333}}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🎤 دليل العرض أمام الدكتور — خطوة بخطوة</h1>
+
+<!-- تجهيز -->
+<h2>⚡ قبل العرض (تجهيز)</h2>
+<ol>
+<li>شغّل المشروع قبل ما يجي دورك:</li>
+</ol>
+<pre><code>cd d:\UNVERSTY\Second-Term\Ai\Project
+python run.py</code></pre>
+<ol start="2">
+<li>افتح المتصفح على <code>http://127.0.0.1:5000</code></li>
+<li>تأكد الداشبورد شغال وتظهر الصفحة بشكل سليم</li>
+</ol>
+
+<hr>
+
+<h2>🎬 العرض (7-10 دقائق)</h2>
+
+<!-- خطوة 1 -->
+<div class="step">
+<span class="step-num">خطوة 1 <span class="time-badge">1 دقيقة</span></span>
+<h3>المقدمة</h3>
+<div class="say">
+مشروعنا هو نظام ذكاء اصطناعي يعطي توصيات شخصية للتمارين والتغذية.<br>
+النظام يستخدم 4 تقنيات AI من المحاضرات:<br>
+• <strong>Q-Learning</strong> من محاضرة 9<br>
+• <strong>Approximate Q-Learning</strong> من محاضرة 10<br>
+• <strong>Value Iteration</strong> من محاضرة 8<br>
+• <strong>A* Search</strong> من محاضرة 3<br>
+وصممنا المشكلة كـ <strong>MDP</strong> من محاضرات 7 و 8.
+</div>
+</div>
+
+<!-- خطوة 2 -->
+<div class="step">
+<span class="step-num">خطوة 2 <span class="time-badge">1 دقيقة</span></span>
+<h3>شرح البيئة</h3>
+<div class="action">أشر على كارت "Current State" في الداشبورد</div>
+<div class="say">
+هنا نشوف حالة المستخدم الحالية — عنده 6 متغيرات:<br>
+Fitness (0-9)، Energy (0-4)، Weight (0-4)، Muscle (0-4)، Fatigue (0-4)، Day<br>
+فضاء الحالات حجمه حوالي <strong>43,750 حالة</strong>.<br>
+والأفعال 28 = 7 تمارين × 4 خطط غذائية.<br>
+الانتقالات <strong>عشوائية</strong> — فيها ضوضاء ±20%.
+</div>
+<div class="action">أشر على "Training Parameters"</div>
+<div class="say">
+هنا المعاملات: α=0.1 معدل التعلم، γ=0.95 معامل الخصم، ε يبدأ 1.0 وينزل لـ 0.05
+</div>
+</div>
+
+<!-- خطوة 3 -->
+<div class="step">
+<span class="step-num">خطوة 3 <span class="time-badge">2 دقيقة</span></span>
+<h3>تدريب الـ Agents</h3>
+<div class="action">اضغط زر "🚀 Train Agents"</div>
+<div class="say">
+الحين نبدأ تدريب عميلين:<br>
+• <strong>Q-Learning</strong>: يبني Q-table ويتعلم بالتجربة — model-free<br>
+• <strong>Approximate Q-Learning</strong>: يستخدم features بدل جدول — يعمم أفضل<br>
+التدريب 500 حلقة، كل حلقة 30 يوم محاكاة.
+</div>
+<div class="wait">انتظر التدريب يخلص (10-30 ثانية)</div>
+<div class="action">أشر على الرسم البياني</div>
+<div class="say">
+هنا نشوف <strong>منحنى التعلم</strong> — المكافأة ترتفع مع الحلقات.<br>
+الخط البنفسجي Q-Learning والأزرق Approximate Q-Learning.<br>
+لاحظوا إن Approximate Q أداؤه أفضل لأنه يعمم باستخدام features.
+</div>
+</div>
+
+<!-- خطوة 4 -->
+<div class="step">
+<span class="step-num">خطوة 4 <span class="time-badge">1 دقيقة</span></span>
+<h3>Value Iteration</h3>
+<div class="action">اضغط زر "📐 Value Iteration"</div>
+<div class="say">
+الحين نحل الـ MDP بشكل <strong>دقيق</strong> باستخدام <strong>معادلات بلمان</strong> من محاضرة 8.<br>
+Value Iteration يحسب V*(s) لكل الحالات — 6,250 حالة.<br>
+هذا <strong>model-based</strong> يعني يحتاج يعرف دالة الانتقال T(s,a,s').
+</div>
+<div class="wait">انتظر يخلص (30-60 ثانية)</div>
+<div class="say">
+تقارب بعد عدة iterations. الحين عنده optimal policy لكل حالة.<br>
+الفرق عن Q-Learning: هذا يحسب كل شي مقدماً، بينما Q-Learning يتعلم بالتجربة.
+</div>
+</div>
+
+<!-- خطوة 5 -->
+<div class="step">
+<span class="step-num">خطوة 5 <span class="time-badge">1 دقيقة</span></span>
+<h3>A* Search</h3>
+<div class="action">اضغط زر "🔍 A* Search"</div>
+<div class="say">
+الحين نستخدم <strong>A* Search</strong> من محاضرة 3 لإيجاد أفضل خطة تمارين.<br>
+A* يستخدم:<br>
+• g(n): التكلفة الفعلية من البداية<br>
+• h(n): تقدير المسافة للهدف (heuristic admissible)<br>
+• f(n) = g(n) + h(n): الأولوية<br>
+ونستخدم <strong>Graph Search</strong> بـ closed set عشان ما نزور حالات مكررة.
+</div>
+<div class="action">أشر على الخطة الناتجة</div>
+<div class="say">
+وجد أفضل خطة — مثلاً: يوم 1 جري + عجز سعرات، يوم 2 جري + بروتين... وهكذا حتى الهدف.
+</div>
+</div>
+
+<!-- خطوة 6 -->
+<div class="step">
+<span class="step-num">خطوة 6 <span class="time-badge">1 دقيقة</span></span>
+<h3>المحاكاة</h3>
+<div class="action">اضغط "⏩ Auto Simulate"</div>
+<div class="say">
+الحين نشاهد الـ agent وهو يطبق توصياته يوم بيوم.<br>
+كل يوم يختار أفضل تمرين + تغذية بناءً على Q-values اللي تعلمها.
+</div>
+<div class="wait">شاهد الـ simulation يشتغل (10 ثواني)</div>
+<div class="action">أشر على الرسم البياني الثاني + Simulation Log</div>
+<div class="say">
+هنا نشوف تطور اللياقة والعضلات والطاقة مع الوقت.<br>
+لاحظوا اللياقة ترتفع والإرهاق يتم إدارته بالراحة.
+</div>
+</div>
+
+<!-- خطوة 7 -->
+<div class="step">
+<span class="step-num">خطوة 7 <span class="time-badge">1 دقيقة</span></span>
+<h3>المقارنة والختام</h3>
+<div class="action">انزل لجدول Performance Comparison</div>
+<div class="say">
+هنا مقارنة بين الطرق الأربع:<br>
+• Q-Learning و Approximate Q: الأفضل للبيئات العشوائية<br>
+• Value Iteration: الأدق لكن يحتاج نموذج<br>
+• A* Search: أسرع لكن ما يتكيف<br><br>
+في النهاية، المشروع يوضح كيف نقدر نطبق تقنيات AI المختلفة على مشكلة واقعية واحدة ونقارن بينها. كل تقنية لها مزايا وعيوب. شكراً.
+</div>
+</div>
+
+<hr>
+
+<!-- أسئلة متوقعة -->
+<h2>❓ أسئلة متوقعة من الدكتور وإجاباتها</h2>
+
+<div class="qa">
+<div class="qa-q">ليه Q-Learning أفضل من Value Iteration هنا؟</div>
+<div class="qa-a">لأن البيئة عندنا <strong>عشوائية</strong> (stochastic) — فيها ضوضاء ±20%. Q-Learning يتعلم من التجربة الفعلية ويتكيف مع العشوائية. بينما Value Iteration يستخدم انتقالات حتمية فقط.</div>
+</div>
+
+<div class="qa">
+<div class="qa-q">ايش الفرق بين Q-Learning و Approximate Q-Learning؟</div>
+<div class="qa-a">Q-Learning يخزن قيمة لكل (حالة، فعل) — جدول ضخم 1.4 مليون خانة. Approximate Q يستخدم 12 feature فقط مع أوزان — يعمم على حالات ما شافها.</div>
+</div>
+
+<div class="qa">
+<div class="qa-q">ليه الـ heuristic بتاعت A* هي admissible؟</div>
+<div class="qa-a">لأنها تحسب المسافة المتبقية للهدف بشكل مبسط — مثلاً: (الوزن الحالي - الوزن المطلوب) × 2. هذا أقل من التكلفة الحقيقية فما تبالغ أبداً.</div>
+</div>
+
+<div class="qa">
+<div class="qa-q">ايش معنى ε-greedy؟</div>
+<div class="qa-a">استراتيجية لحل مشكلة Exploration vs Exploitation من محاضرة 10. بنسبة ε نختار فعل عشوائي (استكشاف)، وبنسبة 1-ε نختار أفضل فعل (استغلال). ε يبدأ 1.0 وينزل تدريجياً لـ 0.05.</div>
+</div>
+
+<div class="qa">
+<div class="qa-q">ايش هي معادلة بلمان؟</div>
+<div class="qa-a">V*(s) = max_a [R(s,a,s') + γ·V*(s')] — يعني قيمة أي حالة = أفضل (مكافأة فورية + قيمة مخصومة للحالة الجاية). علاقة تكرارية نحلها بالتكرار حتى القيم تستقر.</div>
+</div>
+
+<div class="qa">
+<div class="qa-q">ليه استخدمت discount factor γ = 0.95؟</div>
+<div class="qa-a">عشان نعطي أهمية للمكافآت المستقبلية لكن نفضل القريبة. لو γ=0 يهتم بالحاضر فقط، لو γ=1 يهتم بالكل بالتساوي. 0.95 توازن جيد — المحاضرة 7 شرحت هذا.</div>
+</div>
+
+<div class="qa">
+<div class="qa-q">كيف صممت دالة المكافأة؟</div>
+<div class="qa-a">المكافأة تعتمد على هدف المستخدم: لنزول الوزن +3 لكل نقطة نزول وزن، لبناء العضل +3 لكل نقطة زيادة عضلات. عقوبات: -3 لو الإرهاق عالي (خطر إصابة)، -0.1 عقوبة زمنية لتشجيع الكفاءة.</div>
+</div>
+
+<hr>
+
+<!-- توقيت -->
+<h2>⏱️ ملخص التوقيت</h2>
+<table>
+<thead><tr><th>الخطوة</th><th>الوقت</th></tr></thead>
+<tbody>
+<tr><td>المقدمة</td><td>1 دقيقة</td></tr>
+<tr><td>شرح البيئة (MDP)</td><td>1 دقيقة</td></tr>
+<tr><td>تدريب الـ Agents</td><td>2 دقيقة</td></tr>
+<tr><td>Value Iteration</td><td>1 دقيقة</td></tr>
+<tr><td>A* Search</td><td>1 دقيقة</td></tr>
+<tr><td>المحاكاة</td><td>1 دقيقة</td></tr>
+<tr><td>المقارنة والختام</td><td>1.5 دقيقة</td></tr>
+<tr><td><strong>المجموع</strong></td><td><strong>~8.5 دقيقة</strong></td></tr>
+</tbody></table>
+
+</div>
+</body>
+</html>

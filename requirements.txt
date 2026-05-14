@@ -1,0 +1,5 @@
+# AI for Personalized Health & Fitness Recommendations
+# Python Dependencies
+
+flask>=3.0.0
+numpy>=1.24.0
