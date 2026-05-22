@@ -37,7 +37,8 @@ class SearchNode:
       - f(n) = g(n) + h(n): priority for expansion
     """
 
-    def __init__(self, state, actions=None, g_cost=0.0, h_cost=0.0, parent=None):
+    def __init__(self, state, actions=None, g_cost=0.0, h_cost=0.0,
+                 parent=None, accumulators=None):
         self.state = state
         self.actions = actions or []     # Sequence of action indices
         self.g_cost = g_cost             # Cost so far (negative total reward)
@@ -45,6 +46,9 @@ class SearchNode:
         self.f_cost = g_cost + h_cost    # f(n) = g(n) + h(n)
         self.parent = parent
         self.depth = len(self.actions)
+        # Accumulators for slow-changing variables (fitness, weight, muscle)
+        # Mirrors the accumulator pattern in FitnessEnv.step()
+        self.accumulators = accumulators or (0.0, 0.0, 0.0)
 
     def __lt__(self, other):
         """For heap comparison — lower f_cost is better."""
@@ -147,9 +151,11 @@ class AStarSearchAgent:
 
             # ── Expand: generate successors for all actions ──
             for action in range(NUM_ACTIONS):
-                # Use DETERMINISTIC transitions for search
-                next_state = self.env.get_deterministic_next_state(
-                    current.state, action
+                # Use DETERMINISTIC transitions with accumulators
+                # Accumulators track fractional progress for slow-changing
+                # variables (fitness, weight, muscle) across steps
+                next_state, new_acc = self.env.get_deterministic_next_state(
+                    current.state, action, current.accumulators
                 )
 
                 if next_state in closed:
@@ -164,13 +170,14 @@ class AStarSearchAgent:
                 # h(n') = heuristic estimate to goal
                 new_h = self.env.state_distance_to_goal(next_state)
 
-                # Create successor node
+                # Create successor node (carrying accumulators forward)
                 successor = SearchNode(
                     state=next_state,
                     actions=current.actions + [action],
                     g_cost=new_g,
                     h_cost=new_h,
                     parent=current,
+                    accumulators=new_acc,
                 )
 
                 heapq.heappush(frontier, successor)

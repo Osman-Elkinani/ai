@@ -1,5 +1,5 @@
 """
-FitnessEnv — Custom OpenAI Gym-style Environment for Health & Fitness.
+FitnessEnv — OpenAI Gymnasium Environment for Health & Fitness.
 
 This module implements a Markov Decision Process (MDP) as taught in
 Lectures 7 & 8 (MDPs I & II). The environment simulates a user's
@@ -12,13 +12,16 @@ MDP Components:
   - Rewards R(s, a, s'): Goal-dependent feedback signal
   - Discount γ: 0.95 (from config)
 
-The environment follows the gymnasium (OpenAI Gym) interface:
-  - reset() → initial state
-  - step(action) → (next_state, reward, done, truncated, info)
+Simulation Platform: Python + OpenAI Gymnasium
+  - Inherits from gymnasium.Env
+  - Defines observation_space (MultiDiscrete) and action_space (Discrete)
+  - Compatible with standard Gym interface: reset(), step()
 """
 
 import random
 import numpy as np
+import gymnasium as gym
+from gymnasium import spaces
 import sys
 import os
 
@@ -36,9 +39,9 @@ from data.nutrition import NUTRITION_DATABASE
 from environment.user_profile import UserProfile
 
 
-class FitnessEnv:
+class FitnessEnv(gym.Env):
     """
-    Custom Gym-style environment modeling a fitness journey as an MDP.
+    OpenAI Gymnasium environment modeling a fitness journey as an MDP.
 
     State Space: (fitness, energy, weight, muscle, fatigue, day_of_week)
     Action Space: workout_index * NUM_NUTRITION + nutrition_index
@@ -48,7 +51,11 @@ class FitnessEnv:
     - Actions are workout + nutrition combinations
     - Transitions are stochastic (random noise added)
     - Rewards depend on the user's goal
+
+    Inherits from gymnasium.Env to comply with OpenAI Gym standard.
     """
+
+    metadata = {'render_modes': ['human']}
 
     # ─── Labels for human-readable state display ───
     FITNESS_LABELS = ['Very Unfit', 'Unfit', 'Below Average', 'Average',
@@ -61,16 +68,34 @@ class FitnessEnv:
     DAY_LABELS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday',
                   'Friday', 'Saturday', 'Sunday']
 
-    def __init__(self, user_profile=None):
+    def __init__(self, user_profile=None, render_mode=None):
         """
         Initialize the fitness environment.
 
         Args:
             user_profile: UserProfile instance defining initial state and goals
+            render_mode: Gymnasium render mode (optional)
         """
+        super().__init__()
+
         self.profile = user_profile or UserProfile()
         self.goal_type = self.profile.goal_type
         self.target_state = self.profile.target_state
+        self.render_mode = render_mode
+
+        # ── Gymnasium Spaces (OpenAI Gym compliance) ──
+        # Action space: single discrete action (0 to 27)
+        self.action_space = spaces.Discrete(NUM_WORKOUTS * NUM_NUTRITION)
+
+        # Observation space: MultiDiscrete for each state variable
+        self.observation_space = spaces.MultiDiscrete([
+            FITNESS_LEVELS,   # fitness:  0-9
+            ENERGY_LEVELS,    # energy:   0-4
+            WEIGHT_STATUSES,  # weight:   0-4
+            MUSCLE_LEVELS,    # muscle:   0-4
+            FATIGUE_LEVELS,   # fatigue:  0-4
+            DAYS_PER_WEEK,    # day:      0-6
+        ])
 
         # Contextual features (filter actions, NOT in state space)
         self.equipment = getattr(self.profile, 'equipment', 'gym')
@@ -396,12 +421,28 @@ class FitnessEnv:
             'description': f"{workout['emoji']} {workout['name']} + {nutrition['emoji']} {nutrition['name']}"
         }
 
-    def get_deterministic_next_state(self, state, action):
+    def get_deterministic_next_state(self, state, action, accumulators=None):
         """
         Get the expected (deterministic) next state for A* search.
-        
+
         Unlike step(), this uses mean effects without stochastic noise.
         Used by the A* search agent (Lecture 3) for planning.
+
+        When 'accumulators' is provided, slow-changing variables (fitness,
+        weight, muscle) use the same accumulator pattern as step():
+        fractional effects are summed across steps; a level change only
+        fires when |accumulator| >= 1.0.  This lets A* see realistic
+        multi-day progress instead of rounding every small effect to 0.
+
+        Args:
+            state: Current 6D state tuple
+            action: Action index (0 to NUM_ACTIONS-1)
+            accumulators: Optional (acc_fitness, acc_weight, acc_muscle).
+                          Pass None for single-step lookups (Value Iteration).
+
+        Returns:
+            If accumulators is None:  new_state              (backward compat)
+            If accumulators given:    (new_state, new_accumulators)
         """
         workout_idx = action // NUM_NUTRITION
         nutrition_idx = action % NUM_NUTRITION
@@ -417,22 +458,58 @@ class FitnessEnv:
         current_vals = {'fitness': fitness, 'energy': energy}
         for req_key, req_val in workout.get('requirements', {}).items():
             if current_vals.get(req_key, 0) < req_val:
-                # Can't do this workout, return same state with day incremented
-                return (fitness, max(0, min(4, energy + 1)),
-                        weight, muscle, max(0, fatigue - 1), (day + 1) % 7)
+                # Can't do this workout — forced rest
+                new_state = (fitness, max(0, min(4, energy + 1)),
+                             weight, muscle, max(0, fatigue - 1), (day + 1) % 7)
+                if accumulators is not None:
+                    return new_state, accumulators
+                return new_state
 
         w_eff = workout['effects']
         n_eff = nutrition['effects']
 
-        new_fitness = max(0, min(9, int(round(fitness + w_eff['fitness']))))
+        # ── Fast-changing variables: energy & fatigue (change every step) ──
         new_energy = max(0, min(4, int(round(energy + w_eff['energy'] + n_eff['energy']))))
-        new_weight = max(0, min(4, int(round(weight + w_eff['weight'] + n_eff['weight']))))
-        new_muscle = max(0, min(4, int(round(muscle + w_eff['muscle'] + n_eff['muscle']))))
         new_fatigue = max(0, min(4, int(round(fatigue + w_eff['fatigue'] + n_eff['fatigue']))))
         new_day = (day + 1) % 7
 
-        return (new_fitness, new_energy, new_weight,
-                new_muscle, new_fatigue, new_day)
+        if accumulators is not None:
+            # ── Accumulator mode (A* search — multi-step planning) ──
+            acc_f, acc_w, acc_m = accumulators
+
+            acc_f += w_eff['fitness']
+            acc_w += w_eff['weight'] + n_eff['weight']
+            acc_m += w_eff['muscle'] + n_eff['muscle']
+
+            new_fitness = fitness
+            if abs(acc_f) >= 1.0:
+                shift = int(acc_f)
+                new_fitness = max(0, min(9, fitness + shift))
+                acc_f -= shift
+
+            new_weight = weight
+            if abs(acc_w) >= 1.0:
+                shift = int(acc_w)
+                new_weight = max(0, min(4, weight + shift))
+                acc_w -= shift
+
+            new_muscle = muscle
+            if abs(acc_m) >= 1.0:
+                shift = int(acc_m)
+                new_muscle = max(0, min(4, muscle + shift))
+                acc_m -= shift
+
+            new_state = (new_fitness, new_energy, new_weight,
+                         new_muscle, new_fatigue, new_day)
+            return new_state, (acc_f, acc_w, acc_m)
+        else:
+            # ── Single-step mode (Value Iteration — backward compatible) ──
+            new_fitness = max(0, min(9, int(round(fitness + w_eff['fitness']))))
+            new_weight = max(0, min(4, int(round(weight + w_eff['weight'] + n_eff['weight']))))
+            new_muscle = max(0, min(4, int(round(muscle + w_eff['muscle'] + n_eff['muscle']))))
+
+            return (new_fitness, new_energy, new_weight,
+                    new_muscle, new_fatigue, new_day)
 
     def state_distance_to_goal(self, state):
         """

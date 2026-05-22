@@ -29,7 +29,7 @@ NUTRITION_PLANS = [
     'caloric_deficit', 'maintenance', 'caloric_surplus', 'high_protein'
 ]
 
-NUM_WORKOUTS = len(WORKOUT_TYPES)       # 8
+NUM_WORKOUTS = len(WORKOUT_TYPES)       # 7
 NUM_NUTRITION = len(NUTRITION_PLANS)    # 4
 NUM_ACTIONS = NUM_WORKOUTS * NUM_NUTRITION  # 28
 
@@ -40,8 +40,8 @@ LEARNING_RATE = 0.1           # α: step size for Q-value updates
 DISCOUNT_FACTOR = 0.95        # γ: importance of future rewards
 EPSILON_START = 1.0           # Initial exploration rate
 EPSILON_END = 0.05            # Minimum exploration rate
-EPSILON_DECAY = 0.995         # Multiplicative decay per episode
-NUM_EPISODES = 3000           # Training episodes
+EPSILON_DECAY = 0.998         # Multiplicative decay per episode
+NUM_EPISODES = 5000           # Training episodes
 MAX_STEPS_PER_EPISODE = 30    # ~30 days of simulation per episode
 
 # ═══════════════════════════════════════════════════════════════
@@ -53,8 +53,8 @@ NUM_FEATURES = 12             # Number of feature functions
 # ═══════════════════════════════════════════════════════════════
 # A* Search Configuration (Lecture 3: Informed Search)
 # ═══════════════════════════════════════════════════════════════
-MAX_SEARCH_DEPTH = 14         # Plan up to 14 days ahead
-SEARCH_BEAM_WIDTH = 500       # Max nodes to explore
+MAX_SEARCH_DEPTH = 30         # Plan up to 30 days ahead
+SEARCH_BEAM_WIDTH = 2000      # Max nodes to explore
 
 # ═══════════════════════════════════════════════════════════════
 # User Goal Types

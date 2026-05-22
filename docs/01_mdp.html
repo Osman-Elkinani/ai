@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>🎲 01. المعمارية الرياضية لبيئة (MDP) — AI Health Project</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+      mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+    </script>
+</head>
+<body>
+    
+    <div class="sidebar">
+        <h2>📚 التوثيق الشامل</h2>
+        <ul>
+            <li><a href="index.html" >🏠 00. النظرة الشاملة وهيكلة المشروع</a></li>
+<li><a href="01_mdp.html" class="active">🎲 01. المعمارية الرياضية لبيئة (MDP)</a></li>
+<li><a href="02_qlearning.html" >🧠 02. تفصيل خوارزمية Q-Learning</a></li>
+<li><a href="03_approx_q.html" >⚡ 03. Approximate Q-Learning والخصائص</a></li>
+<li><a href="04_value_iteration.html" >📐 04. Value Iteration والحل الدقيق</a></li>
+<li><a href="05_astar.html" >🔍 05. A* Search والتخطيط المستقبلي</a></li>
+<li><a href="06_dashboard.html" >🖥️ 06. واجهة المستخدم والـ APIs</a></li>
+<li><a href="07_defense_faq.html" >🛡️ 07. الأسئلة المتوقعة والردود الأكاديمية</a></li>
+
+        </ul>
+    </div>
+    
+    <div class="content">
+        
+<h1>🎲 01. المعمارية الرياضية لبيئة (MDP)</h1>
+<p>تم تمثيل المشكلة كـ MDP في ملف <code>environment/fitness_env.py</code> بطريقة دقيقة ومحكمة. هذا الملف هو الأطول والأكثر تعقيداً في المشروع (أكثر من 500 سطر برمجي).</p>
+
+<h2>1. فضاء الحالات (State Space)</h2>
+<p>تم تعريف الحالة (State) على أنها Tuple رياضي مكون من 6 عناصر. تم اختيار هذه العناصر وتحديد نطاقاتها بعناية شديدة:</p>
+<table>
+    <tr><th>المتغير</th><th>القيم (Range)</th><th>العدد</th><th>الوصف التفصيلي</th></tr>
+    <tr><td><code>fitness</code></td><td>0 إلى 9</td><td>10</td><td>مستوى اللياقة القلبية. يبدأ من 0 (خامل جداً) إلى 9 (رياضي أولمبي).</td></tr>
+    <tr><td><code>energy</code></td><td>0 إلى 4</td><td>5</td><td>مستوى طاقة الجسم الحالية (يقل مع التمرين ويزيد مع الراحة والتغذية).</td></tr>
+    <tr><td><code>weight</code></td><td>0 إلى 4</td><td>5</td><td>0: نحيف جداً، 1: نحيف، 2: طبيعي، 3: وزن زائد، 4: بدين.</td></tr>
+    <tr><td><code>muscle</code></td><td>0 إلى 4</td><td>5</td><td>مستوى الكتلة العضلية (0: ضعيف، 4: لاعب كمال أجسام).</td></tr>
+    <tr><td><code>fatigue</code></td><td>0 إلى 4</td><td>5</td><td>الإرهاق العصبي والعضلي المتراكم. 4 يعني خطر الإصابة ويستوجب الراحة.</td></tr>
+    <tr><td><code>day</code></td><td>0 إلى 6</td><td>7</td><td>يوم الأسبوع (لأن بعض المستخدمين يفضلون الراحة في أيام معينة).</td></tr>
+</table>
+<p><strong>حجم فضاء الحالات الإجمالي:</strong> 10 × 5 × 5 × 5 × 5 × 7 = <strong>43,750 حالة ممكنة</strong>.</p>
+<div class="callout warning">
+    <strong>تبرير هندسي قوي (Curse of Dimensionality):</strong><br>
+    لماذا لم نضف متغيرات إضافية مثل "الوقت المتاح للمستخدم" أو "نوع المعدات"؟
+    لو أضفنا "المعدات" بثلاث حالات (جيم، منزل، معدات خفيفة)، سيصبح الفضاء: 43,750 × 3 = 131,250 حالة. ولو أضفنا "الوقت المتاح"، سيصل إلى الملايين.
+    هذا يسمى لعنة الأبعاد (Curse of Dimensionality)، وسيجعل Q-Learning مستحيلاً. لذلك، تم التعامل مع المعدات والوقت كـ "مرشحات سياقية" (Contextual Filters) تمنع حركات معينة قبل بدء الحسابات بدلاً من وضعها في الحالة.
+</div>
+
+<h2>2. هندسة فضاء الأفعال (Action Space)</h2>
+<p>في كل حالة، الوكيل يجب أن يتخذ قراراً مركباً يتكون من عنصرين معاً:</p>
+<ul>
+    <li><strong>التمرين (Workout):</strong> واحد من 7 خيارات (Rest, Walking, Jogging, Cycling, Swimming, HIIT, Strength Training).</li>
+    <li><strong>التغذية (Nutrition):</strong> واحد من 4 خيارات (Deficit, Maintenance, Surplus, High Protein).</li>
+</ul>
+<p><strong>حجم فضاء الأفعال (Action Space):</strong> 7 × 4 = <strong>28 فعل مركب ممكن في كل يوم</strong>.</p>
+
+<h2>3. دالة الانتقال (Transition Function & Stochasticity)</h2>
+<p>تم تصميم <code>step()</code> function لتكون عشوائية جزئياً (Stochastic) لتحاكي الواقع البشري:</p>
+<pre><code>if random.random() < 0.10: # 10% Chance of random physical fluctuation
+    energy_change -= 1 # Unexpected tiredness
+    fatigue_change += 1 # Unexpected soreness</code></pre>
+
+<h2>4. نمط المراكم (The Accumulator Pattern) المبتكر</h2>
+<p><strong>المشكلة الكبرى:</strong> خوارزميات RL تتوقع أن الفعل $a$ في الحالة $s$ ينقلك للحالة $s'$ مباشرة. لكن في الواقع، لعب الحديد ليوم واحد لن ينقلك من مستوى عضلي 2 إلى 3. النقلة تحتاج 10 أيام من التمرين.</p>
+<p><strong>الحل البرمجي (Accumulators):</strong> تم اختراع نظام "مراكم" للبيانات البطيئة (الوزن، العضل، اللياقة).</p>
+<pre><code># يتم إضافة كسور بدل أرقام صحيحة
+self.accumulators['weight'] += -0.05  # عجز سعرات ينقص الوزن قليلاً
+self.accumulators['muscle'] += 0.08   # تمرين قوة يضيف عضل قليلاً
+
+# عندما يكتمل الرقم لـ 1 صحيح، يتم تغيير الـ State الفعلية
+if abs(self.accumulators['muscle']) >= 1.0:
+    new_muscle += sign(self.accumulators['muscle'])
+    self.accumulators['muscle'] = 0.0</code></pre>
+<p>هذا النمط المعماري حل مشكلة التخطيط طويل الأمد، خصوصاً مع A* Search.</p>
+
+<h2>5. دالة المكافأة العميقة (Deep Reward Function)</h2>
+<p>تم هندسة الـ Reward في <code>_calculate_reward</code> لتكون دالة مركبة (Composite Function) تعتمد على 4 أوزان:</p>
+<ol>
+    <li><strong>$W_1$ (تقدم الهدف):</strong> مكافأة عالية (+3.0) لكل مستوى وزن ينزل إذا كان الهدف weight_loss.</li>
+    <li><strong>$W_2$ (المحافظة على الطاقة):</strong> مكافأة (+0.5) لضمان عدم إرهاق المستخدم.</li>
+    <li><strong>$W_3$ (عقوبة الإرهاق - Exponential):</strong> عقوبات صارمة متصاعدة. (-4.0) إذا وصل الإرهاق 4، و (-2.0) إذا وصل 3. هذا يضمن سلامة المستخدم (Safety Penalty).</li>
+    <li><strong>$W_4$ (تنوع التمارين):</strong> عقوبة خفيفة (-0.3) إذا كرر الوكيل نفس التمرين يومين متتاليين لتجنب الملل.</li>
+</ol>
+
+<h3>Potential-Based Reward Shaping (PBRS)</h3>
+<p>استخدمنا تقنية PBRS لتسريع التعلم دون إفساد السياسة المثلى. الفكرة هي إعطاء الـ Agent "تلميحات" مستمرة كلما اقترب من الهدف (Heuristic-like reward).</p>
+<pre><code>phi_old = -self.state_distance_to_goal(old_state)
+phi_new = -self.state_distance_to_goal(new_state)
+shaping = DISCOUNT_FACTOR * phi_new - phi_old
+reward += shaping * 0.5</code></pre>
+
+    </div>
+</body>
+</html>

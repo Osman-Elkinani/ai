@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>👑 Leader — النظرة الشاملة والمعمارية</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="sidebar">
+        <h2>📚 ملفات الفريق</h2>
+        <ul>
+            <li><a href="01_leader.html" class="active">👑 Leader — النظرة الشاملة</a></li>
+            <li><a href="02_environment.html">🎲 العضو 2 — MDP Environment</a></li>
+            <li><a href="03_rl_agents.html">🧠 العضو 3 — RL Agents</a></li>
+            <li><a href="04_planning.html">📐 العضو 4 — VI + A* Search</a></li>
+            <li><a href="05_dashboard.html">🖥️ العضو 5 — Web Dashboard</a></li>
+        </ul>
+        <div class="team-badge">
+            <strong>👑 هذا الملف: Leader</strong>
+            النظرة الشاملة، المعمارية، config.py، أسئلة المناقشة
+        </div>
+    </div>
+
+    <div class="content">
+
+        <span class="member-badge leader">👑 LEADER — Project Overview & Architecture</span>
+        <h1>النظرة الشاملة وهيكلة المشروع</h1>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>1. فكرة المشروع والهدف الأكاديمي</h2>
+
+        <p>المشروع هو نظام AI يقدم Personalized Health & Fitness Recommendations. الفكرة الأساسية هي تحويل مشكلة
+            "كيف أحسّن لياقتي؟" إلى <strong>مشكلة رياضية قابلة للحل</strong> عبر أدوات الـ AI اللي درسناها في المنهج.
+        </p>
+
+        <h3>1.1 ليش اخترنا Reinforcement Learning وليس Neural Networks؟</h3>
+        <p>الـ Supervised Learning يحتاج Labeled Dataset ضخم من بيانات Users حقيقيين. بينما الـ
+            <strong>Reinforcement Learning</strong> يتعلم عبر Trial and Error داخل Simulation Environment — وهذا بالضبط ما
+            نملكه: بيئة MDP مبنية على OpenAI Gymnasium تحاكي استجابة الجسم البشري.</p>
+        <p><strong>Simulation Platform:</strong> Python + OpenAI Gymnasium (كما هو مطلوب في الـ Task Description).</p>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>2. الربط بالمنهج — Theoretical Foundations</h2>
+
+        <p>كل مكون في المشروع مربوط مباشرة بمحاضرة محددة. هنا نشرح النظرية أولاً ثم نوضح كيف طبقناها.</p>
+
+        <h3>2.1 Markov Decision Process — MDP (Lectures 7 & 8)</h3>
+        <p>في الـ Lecture 7 درسنا إن أي Decision-Making Problem يمكن نمذجته كـ MDP لو توفرت 5 عناصر:</p>
+        <table>
+            <tr><th>العنصر</th><th>التعريف من المنهج</th><th>التطبيق في مشروعنا</th></tr>
+            <tr>
+                <td><strong>S (States)</strong></td>
+                <td>مجموعة كل الحالات الممكنة للبيئة</td>
+                <td>Tuple من 6 متغيرات: <code>(fitness, energy, weight, muscle, fatigue, day)</code> = 43,750 State</td>
+            </tr>
+            <tr>
+                <td><strong>A (Actions)</strong></td>
+                <td>مجموعة الأفعال المتاحة في كل State</td>
+                <td>28 Action مركب: 7 Workouts × 4 Nutrition Plans</td>
+            </tr>
+            <tr>
+                <td><strong>T(s,a,s')</strong></td>
+                <td>Transition Function — احتمالية الانتقال من State لأخرى</td>
+                <td>دالة <code>step(action)</code> في <code>fitness_env.py</code> مع 10% Stochastic Noise</td>
+            </tr>
+            <tr>
+                <td><strong>R(s,a,s')</strong></td>
+                <td>Reward Function — إشارة التعزيز</td>
+                <td>دالة <code>_calculate_reward()</code> — Composite Function بـ 4 أوزان (Goal Progress, Energy, Fatigue Penalty, Safety)</td>
+            </tr>
+            <tr>
+                <td><strong>γ (Gamma)</strong></td>
+                <td>Discount Factor — أهمية المكافآت المستقبلية</td>
+                <td><code>γ = 0.95</code> — عالية لأن اللياقة تتطلب Long-Term Planning</td>
+            </tr>
+        </table>
+
+        <div class="callout info">
+            <h3>💡 Markov Property</h3>
+            <p>من Lecture 7: الـ MDP يفترض أن الـ Future يعتمد فقط على الـ Current State وليس على الـ History. في مشروعنا، الـ State Tuple <code>(fitness=4, energy=3, weight=2, muscle=1, fatigue=0, day=2)</code> يحتوي كل المعلومات اللازمة لاتخاذ القرار — ما نحتاج نعرف شنو سوى المستخدم أمس.</p>
+        </div>
+
+        <h3>2.2 Bellman Equation (Lecture 8)</h3>
+        <p>في Lecture 8 درسنا أن القيمة المثلى لأي State تُحسب بمعادلة Bellman:</p>
+        <pre><code>V*(s) = max_a [ R(s,a,s') + γ · V*(s') ]</code></pre>
+        <p>هذه المعادلة تقول: "قيمة أي State = أفضل Reward فوري + قيمة الـ Next State مضروبة في γ". طبقنا هذا حرفياً في <code>value_iteration_agent.py</code> — الـ Agent يمر على كل الـ 6,250 States ويطبق هذه المعادلة حتى الـ Convergence.</p>
+
+        <h3>2.3 Q-Learning — Temporal Difference Learning (Lecture 9)</h3>
+        <p>في Lecture 9 درسنا إن الـ Agent يقدر يتعلم <strong>بدون ما يعرف الـ Transition Model</strong> (Model-Free). يتعلم فقط من Experience:</p>
+        <pre><code>Q(s,a) ← Q(s,a) + α [ R + γ · max_a' Q(s',a') - Q(s,a) ]
+                         ↑                              ↑
+                    TD Target                    Current Estimate
+                         └──── TD Error ────────────┘</code></pre>
+        <p>طبقنا هذا في <code>q_learning_agent.py</code> — الـ Agent يتفاعل مع الـ Environment عبر <code>env.step(action)</code>، يستقبل الـ Reward والـ Next State، ثم يحدّث الـ Q-Table.</p>
+
+        <h3>2.4 Exploration vs Exploitation — ε-Greedy (Lecture 9-10)</h3>
+        <p>من أهم المفاهيم في الـ RL: الـ Agent لازم يوازن بين:</p>
+        <ul>
+            <li><strong>Exploration:</strong> تجربة Actions جديدة ما جربها قبل (عشان يكتشف خيارات أفضل)</li>
+            <li><strong>Exploitation:</strong> استغلال أفضل Action يعرفه حالياً (عشان يجمع أكثر Reward)</li>
+        </ul>
+        <p>الحل من المنهج: <strong>ε-Greedy Policy</strong> — بنسبة ε يختار Random Action، وبنسبة (1-ε) يختار Best Action. في مشروعنا، ε يبدأ من 1.0 (Pure Exploration) وينزل تدريجياً لـ 0.05 عبر Multiplicative Decay.</p>
+
+        <h3>2.5 Approximate Q-Learning — Feature-Based Generalization (Lecture 10)</h3>
+        <p>في Lecture 10 درسنا مشكلة الـ <strong>Curse of Dimensionality</strong>: لما يكون الـ State Space كبير جداً، الـ Q-Table ما يقدر يغطي كل الـ States. الحل: نستبدل الـ Table بمعادلة خطية:</p>
+        <pre><code>Q(s,a) ≈ w₁·f₁(s,a) + w₂·f₂(s,a) + ... + wₙ·fₙ(s,a)</code></pre>
+        <p>بدل ما نحفظ 1.2 مليون Q-Value (43,750 States × 28 Actions)، نتعلم <strong>12 Weight فقط</strong>. الميزة: الـ Agent يقدر يعمل <strong>Generalization</strong> — لو شاف State جديدة ما شافها قبل، يحلل الـ Features بتاعتها ويستنتج Best Action.</p>
+
+        <h3>2.6 Informed Search — A* Algorithm (Lecture 3)</h3>
+        <p>في Lecture 3 درسنا أن A* يضمن إيجاد الـ Optimal Path لو الـ Heuristic كانت <strong>Admissible</strong> (ما تبالغ في التقدير):</p>
+        <pre><code>f(n) = g(n) + h(n)
+  g(n) = Actual Cost from Start to n
+  h(n) = Heuristic Estimate from n to Goal  ← must be Admissible</code></pre>
+        <p>في مشروعنا، A* يبني خطة 30 يوم كاملة. الـ Heuristic بتاعتنا Admissible لأنها تفترض Best-Case Scenario (أقصى Fitness Gain بدون أي Fatigue) — هذا دائماً Underestimate للـ True Cost.</p>
+
+        <h3>2.7 الخوارزميات وعلاقتها بالمنهج</h3>
+        <table>
+            <tr>
+                <th>Algorithm</th>
+                <th>Lecture</th>
+                <th>Type</th>
+                <th>File</th>
+            </tr>
+            <tr>
+                <td>A* Search</td>
+                <td>Lecture 3 — Informed Search</td>
+                <td>Model-Based Planning</td>
+                <td><span class="file-ref">agents/search_agent.py</span></td>
+            </tr>
+            <tr>
+                <td>Value Iteration</td>
+                <td>Lecture 8 — MDPs II</td>
+                <td>Model-Based Exact Solution</td>
+                <td><span class="file-ref">agents/value_iteration_agent.py</span></td>
+            </tr>
+            <tr>
+                <td>Q-Learning</td>
+                <td>Lecture 9 — RL I</td>
+                <td>Model-Free (Tabular)</td>
+                <td><span class="file-ref">agents/q_learning_agent.py</span></td>
+            </tr>
+            <tr>
+                <td>Approximate Q-Learning</td>
+                <td>Lecture 10 — RL II</td>
+                <td>Model-Free (Feature-Based)</td>
+                <td><span class="file-ref">agents/approx_q_agent.py</span></td>
+            </tr>
+        </table>
+
+        <div class="callout info">
+            <h3>💡 ملاحظة أكاديمية</h3>
+            <p>المشروع يغطي الطيف الكامل لحل الـ MDPs: من الـ Exact Solution عبر Value Iteration، إلى الـ Model-Free Learning عبر Q-Learning،
+                إلى الـ Generalization عبر Approximate Q-Learning، إلى الـ Planning عبر A* Search. كل Agent يقدم منظور مختلف لنفس المشكلة — وهذا يسمح لنا نقارن بين الـ Approaches.</p>
+        </div>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>2. System Architecture — معمارية النظام</h2>
+
+        <p>النظام مبني على 5 Layers كل Layer مسؤولة عن مهمة محددة:</p>
+
+        <h3>2.1 الطبقات الخمس</h3>
+        <table>
+            <tr>
+                <th>الطبقة</th>
+                <th>المسؤولية</th>
+                <th>الملفات</th>
+            </tr>
+            <tr>
+                <td><strong>Configuration Layer</strong></td>
+                <td>كل الثوابت والـ Hyperparameters في مكان واحد. أي تعديل على الـ Learning Rate أو عدد الـ Episodes يتم
+                    هنا فقط، والبقية تستورد منه.</td>
+                <td><span class="file-ref">config.py</span></td>
+            </tr>
+            <tr>
+                <td><strong>Data Layer</strong></td>
+                <td>قواعد بيانات التمارين والتغذية. كل تمرين له effects رقمية على الـ State Variables، وكل خطة غذائية
+                    لها سعرات وماكروز.</td>
+                <td><span class="file-ref">data/workouts.py</span><br><span class="file-ref">data/nutrition.py</span>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Environment Layer</strong></td>
+                <td>الـ MDP Simulation Engine. يستقبل Action ويعيد State جديدة + Reward. يطبق الـ Stochasticity والـ
+                    Accumulator Pattern.</td>
+                <td><span class="file-ref">environment/fitness_env.py</span><br><span
+                        class="file-ref">environment/user_profile.py</span></td>
+            </tr>
+            <tr>
+                <td><strong>Agent Layer</strong></td>
+                <td>4 وكلاء AI، كل واحد يحل المشكلة بطريقة مختلفة. يتفاعلون مع الـ Environment عبر الـ
+                    <code>step()</code> و <code>reset()</code> interface.</td>
+                <td><span class="file-ref">agents/*.py</span></td>
+            </tr>
+            <tr>
+                <td><strong>Presentation Layer</strong></td>
+                <td>الـ Flask API + الـ Web Dashboard. تربط كل شيء وتعرض النتائج بشكل مرئي عبر Charts ومقاييس حية.</td>
+                <td><span class="file-ref">web/app.py</span><br><span class="file-ref">web/templates/</span><br><span
+                        class="file-ref">web/static/</span></td>
+            </tr>
+        </table>
+
+        <h3>2.2 مسار البيانات (Data Flow)</h3>
+        <p>خلني أشرح بالضبط شنو يصير لما المستخدم يضغط "Train AI" في الـ Dashboard:</p>
+
+        <ol>
+            <li>المستخدم يضغط الزر → الـ JavaScript في <code>dashboard.js</code> يرسل <code>POST /api/train</code> مع
+                عدد الـ Episodes.</li>
+            <li>الـ Flask في <code>app.py</code> يستقبل الطلب ويشغل <code>q_agent.train(env, num_episodes=50)</code>.
+            </li>
+            <li>داخل الـ <code>train()</code> في <code>q_learning_agent.py</code>:
+                <ul>
+                    <li>يستدعي <code>env.reset()</code> → البيئة تعيد الحالة الأولية من <code>user_profile.py</code>.
+                    </li>
+                    <li>يستدعي <code>self.get_action(state)</code> → يختار فعل (Epsilon-Greedy).</li>
+                    <li>يستدعي <code>env.step(action)</code> → البيئة تحسب الـ Transition باستخدام بيانات من
+                        <code>workouts.py</code> و <code>nutrition.py</code>.</li>
+                    <li>يستقبل <code>(next_state, reward, done, truncated, info)</code>.</li>
+                    <li>يستدعي <code>self.update(state, action, reward, next_state, done)</code> → يحدّث الـ Q-Table.
+                    </li>
+                </ul>
+            </li>
+            <li>الـ Flask يرجع الـ Metrics كـ JSON → الـ JavaScript يحدّث الـ Learning Curve Chart والـ Progress Bar.
+            </li>
+            <li>هذا يتكرر على دفعات (Batches) كل 50 episode حتى يصل للعدد المطلوب.</li>
+        </ol>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>3. هيكلة الملفات والمجلدات — كل ملف ودوره</h2>
+
+        <h3>3.1 ملفات الجذر (Root)</h3>
+
+        <h4>📄 <code>run.py</code></h4>
+        <p>نقطة الدخول الرئيسية للمشروع. يشغل سيرفر Flask على <code>127.0.0.1:5000</code>. لتشغيل المشروع نكتب فقط:</p>
+        <pre><code>python run.py</code></pre>
+
+        <h4>📄 <code>config.py</code> — (شرح تفصيلي في القسم 4)</h4>
+        <p>ملف الإعدادات المركزي. كل Hyperparameter وكل ثابت في المشروع بأكمله معرّف هنا.</p>
+
+        <h4>📄 <code>requirements.txt</code></h4>
+        <p>يحتوي على 3 Dependencies فقط: <code>flask>=3.0.0</code>، <code>numpy>=1.24.0</code>، و <code>gymnasium>=1.0.0</code> (OpenAI Gym). المشروع لا يحتاج TensorFlow أو PyTorch لأنه لا يستخدم Neural Networks.</p>
+
+        <h3>3.2 مجلد <code>environment/</code></h3>
+
+        <h4>📄 <code>fitness_env.py</code> (530+ سطر — أطول ملف)</h4>
+        <p>القلب النابض للمشروع. يحتوي على class <code>FitnessEnv(gym.Env)</code> الذي يرث من <code>gymnasium.Env</code> ويمثل الـ MDP بالكامل. يحدد <code>action_space = Discrete(28)</code> و <code>observation_space = MultiDiscrete([10,5,5,5,5,7])</code>. الـ Interface:</p>
+        <ul>
+            <li><code>reset()</code> → يعيد Initial State.</li>
+            <li><code>step(action)</code> → ينفذ الـ Transition Function ويرجع
+                <code>(next_state, reward, done, truncated, info)</code> — نفس الـ Gymnasium Signature.</li>
+            <li><code>get_deterministic_next_state(state, action)</code> → Deterministic version للـ A* Search و Value
+                Iteration.</li>
+            <li><code>state_distance_to_goal(state)</code> → الـ Heuristic Function للـ A*.</li>
+        </ul>
+
+        <h4>📄 <code>user_profile.py</code> (159 سطر)</h4>
+        <p>يحتوي على class <code>UserProfile</code> مع 3 Presets جاهزة:</p>
+        <ul>
+            <li><strong>beginner_weight_loss:</strong> أحمد، 28 سنة، 92 كجم، هدفه نزول الوزن.</li>
+            <li><strong>intermediate_muscle:</strong> خالد، 24 سنة، 75 كجم، هدفه بناء العضلات.</li>
+            <li><strong>advanced_fitness:</strong> عمر، 30 سنة، 68 كجم، هدفه اللياقة العامة.</li>
+        </ul>
+        <p>كل Preset يحدد الـ <code>initial_state</code> والـ <code>target_state</code> اللي يستخدمها الـ MDP.</p>
+
+        <h3>3.3 مجلد <code>data/</code></h3>
+
+        <h4>📄 <code>workouts.py</code> (166 سطر)</h4>
+        <p>قاعدة بيانات الـ 7 تمارين. كل تمرين عبارة عن Dictionary فيه:</p>
+        <ul>
+            <li><code>effects</code>: تأثيره على الـ 5 State Variables (أرقام عشرية مثل <code>fitness: +0.15</code>).
+            </li>
+            <li><code>requirements</code>: الحد الأدنى المطلوب (مثلاً HIIT يتطلب <code>fitness >= 4</code> و
+                <code>energy >= 2</code>).</li>
+            <li><code>calories_burned</code>: السعرات المحروقة (مبنية على معايير ACSM).</li>
+            <li><code>equipment</code>: المعدات المطلوبة (<code>none</code> / <code>home</code> / <code>gym</code>).
+            </li>
+        </ul>
+
+        <h4>📄 <code>nutrition.py</code> (76 سطر)</h4>
+        <p>قاعدة بيانات الـ 4 خطط غذائية: Caloric Deficit (1600 cal)، Maintenance (2200 cal)، Caloric Surplus (2800
+            cal)، High Protein. كل خطة لها <code>effects</code> و <code>macros</code> (نسب
+            البروتين/الكربوهيدرات/الدهون).</p>
+
+        <h3>3.4 مجلد <code>agents/</code></h3>
+
+        <h4>📄 <code>q_learning_agent.py</code> (331 سطر)</h4>
+        <p>Tabular Q-Learning — يبني Q-Table كـ <code>defaultdict</code> ويتعلم بالـ Bellman Update Rule. يحتوي على
+            Training Metrics متقدمة (Policy Stability, State Coverage, Goal Achievement Rate).</p>
+
+        <h4>📄 <code>approx_q_agent.py</code> (282 سطر)</h4>
+        <p>Feature-Based Approximate Q-Learning — يستبدل الـ Q-Table بـ 12 Weight. يستخدم <code>numpy.dot()</code> لحساب
+            الـ Q-Value بدل البحث في جدول.</p>
+
+        <h4>📄 <code>value_iteration_agent.py</code> (296 سطر)</h4>
+        <p>Model-Based — يحل الـ Bellman Equation بشكل مباشر لكل الـ 6,250 State. يحتاج الـ Transition Model من الـ
+            Environment.</p>
+
+        <h4>📄 <code>search_agent.py</code> (275 سطر)</h4>
+        <p>A* Search — يبني شجرة بحث ويستخدم <code>heapq</code> (Priority Queue) لتوسيع الـ Node الأقل <code>f(n)</code>
+            أولاً. يطبق Graph Search مع Closed Set.</p>
+
+        <h3>3.5 مجلد <code>web/</code></h3>
+
+        <h4>📄 <code>app.py</code> (344 سطر)</h4>
+        <p>Flask Backend — 6 API Endpoints تربط الـ Frontend بالـ Agents والـ Environment.</p>
+
+        <h4>📄 <code>static/js/dashboard.js</code> (710 سطر — ثاني أطول ملف)</h4>
+        <p>كل المنطق التفاعلي: Chunked Training (دفعات 50 Episode)، Chart.js configuration، Live Updates، Stop Button.
+        </p>
+
+        <h4>📄 <code>templates/dashboard.html</code> و <code>static/css/style.css</code></h4>
+        <p>هيكلة الصفحة والتصميم البصري (Professional Blue Dark Theme).</p>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>4. شرح <code>config.py</code> سطر بسطر</h2>
+
+        <p>هذا الملف هو "العقل المركزي" للمشروع. كل ملف آخر يستورد منه. السبب في وجود هذا الملف هو منع التضارب — لو كان
+            الـ <code>DISCOUNT_FACTOR</code> مكتوب يدوياً في 4 ملفات مختلفة، ممكن واحد يكتب 0.95 والثاني يكتب 0.9 ويصير
+            Bug.</p>
+
+        <h3>4.1 Environment State Space</h3>
+        <div class="code-explain">
+            <div class="line"><code>FITNESS_LEVELS = 10</code><span>10 Levels للـ Fitness (0-9). هو المتغير الأكبر نطاقاً لأنه الـ Primary Goal لأغلب المستخدمين.</span></div>
+            <div class="line"><code>ENERGY_LEVELS = 5</code><span>5 Levels للـ Energy (0-4). Fast-changing variable — يتأثر مباشرة كل Step.</span></div>
+            <div class="line"><code>WEIGHT_STATUSES = 5</code><span>5 Levels للـ Weight (0-4). Slow-changing variable — يستخدم Accumulator Pattern.</span></div>
+            <div class="line"><code>MUSCLE_LEVELS = 5</code><span>5 Levels للـ Muscle (0-4). Slow-changing أيضاً — يحتاج ~7 أيام Training لتغيير Level واحد.</span></div>
+            <div class="line"><code>FATIGUE_LEVELS = 5</code><span>5 Levels للـ Fatigue (0-4). Level 4 يسبب Penalty <code>-4.0</code> في الـ Reward (Safety Constraint).</span></div>
+            <div class="line"><code>DAYS_PER_WEEK = 7</code><span>Day of Week (0-6). موجودة في الـ State لأن بعض الـ Users يفضلون Rest أيام معينة.</span></div>
+        </div>
+
+        <pre><code>STATE_SPACE_SIZE = 10 × 5 × 5 × 5 × 5 × 7 = 43,750 States</code></pre>
+
+        <div class="callout warn">
+            <h3>⚠️ Curse of Dimensionality</h3>
+            <p>لو أضفنا متغير واحد فقط (مثل "الوقت المتاح" بـ 3 قيم)، الفضاء يقفز لـ 131,250 حالة. لو أضفنا متغيرين،
+                يصبح +393,750 حالة. الـ Tabular Q-Learning لن يستطيع تغطية هذا الحجم في 5000 Episode.</p>
+            <p><strong>الحل المعماري:</strong> المتغيرات الإضافية (المعدات، الوقت) تعمل كـ Contextual Filters — ترشّح
+                الـ Actions المتاحة قبل دخول الـ MDP، بدل أن تكون جزء من الـ State.</p>
+        </div>
+
+        <h3>4.2 Action Space</h3>
+        <div class="code-explain">
+            <div class="line"><code>WORKOUT_TYPES = ['rest', 'walking', ...]</code><span>7 أنواع تمارين. كل واحد له
+                    Effects مختلفة على الـ State Variables.</span></div>
+            <div class="line"><code>NUTRITION_PLANS = ['caloric_deficit', ...]</code><span>4 خطط تغذية. الـ Agent يختار
+                    واحدة مع كل تمرين.</span></div>
+            <div class="line"><code>NUM_ACTIONS = 7 × 4 = 28</code><span>الفعل المركب: (workout, nutrition). الـ Agent
+                    يختار رقم من 0 إلى 27 ويتم فكه بـ <code>action // 4</code> و <code>action % 4</code>.</span></div>
+        </div>
+
+        <h3>4.3 Q-Learning Hyperparameters</h3>
+        <div class="code-explain">
+            <div class="line"><code>LEARNING_RATE = 0.1</code><span><strong>α (Alpha)</strong> — كم "نثق" بالمعلومة
+                    الجديدة. 0.1 يعني 10% من التحديث يأتي من التجربة الجديدة و 90% من القيمة القديمة. قيمة منخفضة لأن
+                    البيئة Stochastic.</span></div>
+            <div class="line"><code>DISCOUNT_FACTOR = 0.95</code><span><strong>γ (Gamma)</strong> — أهمية المستقبل. 0.95
+                    يعني المكافأة بعد 10 أيام تساوي <code>0.95^10 = 0.60</code> من قيمتها الفورية. قيمة عالية لأن
+                    اللياقة البدنية تتطلب "تضحية اليوم لنتيجة الشهر".</span></div>
+            <div class="line"><code>EPSILON_START = 1.0</code><span>في البداية، الـ Agent عشوائي 100% (Pure
+                    Exploration). لا يعرف شيء عن البيئة.</span></div>
+            <div class="line"><code>EPSILON_END = 0.05</code><span>في النهاية، يبقى 5% عشوائي. لماذا لا ننزلها لـ 0؟
+                    لمنع الـ Policy Collapse — لو واجه حالة نادرة لم يتدرب عليها، هذا الـ 5% يساعده يستكشف حل.</span>
+            </div>
+            <div class="line"><code>EPSILON_DECAY = 0.998</code><span>كل Episode يُضرب الـ ε في 0.998. بعد 500 Episode:
+                    <code>1.0 × 0.998^500 ≈ 0.37</code>. بعد 3000: <code>≈ 0.0025</code> (يصل للـ Minimum).</span></div>
+            <div class="line"><code>NUM_EPISODES = 5000</code><span>عدد المحاولات. كل Episode = محاكاة 30 يوم كاملة.
+                    5000 × 30 = 150,000 خطوة تدريبية.</span></div>
+            <div class="line"><code>MAX_STEPS_PER_EPISODE = 30</code><span>كل Episode ينتهي بعد 30 Step (يوم). يمكن أن
+                    ينتهي أبكر إذا تحقق الـ Goal.</span></div>
+        </div>
+
+        <h3>4.4 Approximate Q-Learning</h3>
+        <div class="code-explain">
+            <div class="line"><code>APPROX_LEARNING_RATE = 0.01</code><span>أقل من الـ Tabular (0.01 بدل 0.1). السبب:
+                    تحديث الـ Weights يؤثر على كل الـ States مرة واحدة (لأنها معادلة خطية مشتركة)، فلو كان الـ α عالي
+                    ستتذبذب الأوزان بشدة.</span></div>
+            <div class="line"><code>NUM_FEATURES = 12</code><span>12 Feature Function تم تصميمها يدوياً (Feature
+                    Engineering). بدل 1.2 مليون خانة في الـ Q-Table، نتعلم 12 رقم فقط.</span></div>
+        </div>
+
+        <h3>4.5 A* Search</h3>
+        <div class="code-explain">
+            <div class="line"><code>MAX_SEARCH_DEPTH = 30</code><span>يخطط لمدة 30 يوم (شهر كامل). سبب الحد: الـ
+                    Branching Factor = 28، بدون حد ستنفجر الذاكرة.</span></div>
+            <div class="line"><code>SEARCH_BEAM_WIDTH = 2000</code><span>أقصى عدد Nodes يتم توسيعها. يمنع الـ Memory
+                    Overflow. 2000 كافية لإيجاد خطة ممتازة.</span></div>
+        </div>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>5. أسئلة المناقشة المتوقعة (Defense FAQ)</h2>
+
+        <div class="callout danger">
+            <h3>س1: هل البيانات دي Dummy Data ولا Real Data؟</h3>
+            <p><strong>الجواب:</strong> البيانات نوعين:</p>
+            <ul>
+                <li><strong>بيانات التمارين والتغذية:</strong> مبنية على معايير ACSM و CDC الأمريكية. مثال: الـ Jogging
+                    يحرق 350 سعرة / 30 دقيقة — هذا الرقم من إرشادات الـ American College of Sports Medicine.</li>
+                <li><strong>بيانات الـ AI:</strong> كل Q-Value وكل Reward وكل Policy يتم حسابها فعلياً Real-time أثناء
+                    التدريب. لا يوجد أي رقم Hardcoded في النتائج.</li>
+            </ul>
+        </div>
+
+        <div class="callout danger">
+            <h3>س2: ليش 5 متغيرات بس في الـ State؟ النوم والوقت والعمر مو مهمين؟</h3>
+            <p><strong>الجواب:</strong> بسبب الـ <strong>Curse of Dimensionality</strong>. كل متغير إضافي يضرب حجم الـ
+                State Space. الـ 5 متغيرات الحالية تعطي 43,750 State. لو أضفنا "الوقت المتاح" (3 قيم) يصبح 131,250. لو
+                أضفنا "النوم" (3 قيم) يصبح 393,750. الـ Tabular Q-Learning ما يقدر يغطي هذا الحجم.</p>
+            <p><strong>الحل المعماري:</strong> العمر والوقت والمعدات تعمل كـ <strong>Contextual Filters</strong> — ترشّح
+                الأفعال المتاحة قبل الدخول في الـ MDP. مثال: لو المستخدم عنده 30 دقيقة فقط، الـ Swimming (40 دقيقة) يتم
+                حذفها من الـ Action Space تلقائياً عبر <code>get_available_workout_indices()</code>.</p>
+        </div>
+
+        <div class="callout danger">
+            <h3>س3: الـ Learning Curve فيه تذبذب — هل هذا يعني الـ Agent ما تعلم؟</h3>
+            <p><strong>الجواب:</strong> التذبذب <strong>متعمد وطبيعي</strong> ولا يعني فشل التعلم. مصدره شيئين:</p>
+            <ol>
+                <li><strong>Epsilon = 0.05:</strong> الـ Agent لسا يسوي أفعال عشوائية في 5% من الخطوات. هذا يسمى
+                    Exploration Noise وهو Standard Practice لمنع الـ Local Optima. لو نزّلنا الـ ε لـ 0 الخط يثبت لكن
+                    الـ Agent يعلق في سياسة واحدة ولا يقدر يتكيف.</li>
+                <li><strong>Stochasticity (10%):</strong> البيئة فيها 10% احتمالية لحدوث تأثير عشوائي (إرهاق مفاجئ). هذا
+                    يحاكي الواقع — حتى لو سويت أفضل تمرين ممكن تصاب بإرهاق غير متوقع.</li>
+            </ol>
+            <p><strong>الدليل على التعلم:</strong> الـ Avg Reward يرتفع من -20 (أول 100 Episode) إلى +42 (آخر 100
+                Episode). هذا يثبت أن الـ Policy تحسنت بشكل واضح.</p>
+        </div>
+
+        <div class="callout danger">
+            <h3>س4: شنو الفرق بين الـ 4 Agents في مشروعكم تحديداً؟</h3>
+            <p><strong>الجواب:</strong></p>
+            <table>
+                <tr>
+                    <th>الخاصية</th>
+                    <th>Q-Learning</th>
+                    <th>Approx Q</th>
+                    <th>Value Iteration</th>
+                    <th>A* Search</th>
+                </tr>
+                <tr>
+                    <td><strong>يحتاج Model؟</strong></td>
+                    <td>لا (Model-Free)</td>
+                    <td>لا (Model-Free)</td>
+                    <td>نعم (Model-Based)</td>
+                    <td>نعم (Model-Based)</td>
+                </tr>
+                <tr>
+                    <td><strong>التخزين</strong></td>
+                    <td>Q-Table (Dict)</td>
+                    <td>12 Weight فقط</td>
+                    <td>V-Table (6250 قيمة)</td>
+                    <td>Search Tree</td>
+                </tr>
+                <tr>
+                    <td><strong>يتعامل مع Stochasticity؟</strong></td>
+                    <td>نعم</td>
+                    <td>نعم</td>
+                    <td>لا (Deterministic)</td>
+                    <td>لا (Deterministic)</td>
+                </tr>
+                <tr>
+                    <td><strong>Generalization؟</strong></td>
+                    <td>لا — يعرف فقط الـ States اللي زارها</td>
+                    <td><strong>نعم</strong> — يعمم عبر الـ Features</td>
+                    <td>نعم — يحسب كل State</td>
+                    <td>لا — يبحث مسار واحد</td>
+                </tr>
+                <tr>
+                    <td><strong>النتيجة</strong></td>
+                    <td>Best Action لحالة واحدة</td>
+                    <td>Best Action لحالة واحدة</td>
+                    <td>Optimal Policy لكل الـ States</td>
+                    <td>خطة كاملة (30 يوم)</td>
+                </tr>
+                <tr>
+                    <td><strong>الوقت</strong></td>
+                    <td>~15 ثانية</td>
+                    <td>~15 ثانية</td>
+                    <td>~60 ثانية</td>
+                    <td>~3 ثوانٍ</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="callout danger">
+            <h3>س5: الـ Avg Reward = 42. هل هذا رقم كويس ولا ضعيف؟</h3>
+            <p><strong>الجواب:</strong> هذا رقم <strong>ممتاز</strong>. الحد الأقصى النظري للـ Reward في Episode واحد
+                (30 يوم) يتراوح بين 50-60 تقريباً. السبب أن دالة الـ Reward فيها عقوبات إجبارية:</p>
+            <ul>
+                <li>عقوبة الزمن: <code>-0.1 × 30 = -3.0</code> في كل Episode</li>
+                <li>عقوبة الإرهاق: <code>-0.5</code> إلى <code>-4.0</code> كلما ارتفع الـ Fatigue</li>
+                <li>عقوبة التكرار: <code>-0.3</code> لو كرر نفس الفعل</li>
+                <li>الـ Stochasticity: 10% عشوائية تقلل الـ Reward</li>
+            </ul>
+            <p>يعني 42 من أصل ~55 ممكن = <strong>~76% من الـ Optimal</strong>. وهذا طبيعي جداً في بيئة Stochastic.</p>
+        </div>
+
+        <div class="callout danger">
+            <h3>س6: Value Iteration يأخذ 60 ثانية وهو بس 6,250 State — ليش بطيء؟</h3>
+            <p><strong>الجواب:</strong> لأن الحساب مركب. في كل Iteration، الخوارزمية تمر على:</p>
+            <ul>
+                <li>6,250 State × 28 Action = <strong>175,000 عملية لكل Iteration</strong></li>
+                <li>كل عملية تستدعي <code>get_deterministic_next_state()</code> + <code>_compute_reward()</code> — كل
+                    واحدة فيها 20+ سطر حسابات</li>
+                <li>الخوارزمية تحتاج ~40-50 Iteration للـ Convergence</li>
+                <li>المجموع: <code>175,000 × 50 = 8.75 مليون</code> عملية حسابية في Pure Python (بدون C Extensions)</li>
+            </ul>
+        </div>
+
+        <div class="callout danger">
+            <h3>س7: كيف ضمنتوا أن الـ Heuristic في A* هي Admissible؟</h3>
+            <p><strong>الجواب:</strong> الـ Heuristic تحسب المسافة للهدف بطريقة <strong>متفائلة جداً
+                    (Optimistic)</strong>. مثلاً لهدف weight_loss:</p>
+            <pre><code>distance = (current_weight - target_weight) × 2 + (target_fitness - current_fitness) × 1.5</code></pre>
+            <p>هذا يفترض أن كل خطوة ستنقص الوزن وتزيد اللياقة بأقصى معدل ممكن، بدون أي Fatigue أو Energy Loss. هذا
+                الافتراض مستحيل عملياً، مما يعني أن الـ Heuristic <strong>دائماً تقلل من التكلفة الحقيقية
+                    (Underestimate)</strong>، وهذا بالضبط شرط الـ Admissibility الرياضي.</p>
+        </div>
+
+        <div class="callout danger">
+            <h3>س8: شنو الـ Accumulator Pattern وليش كان ضروري؟</h3>
+            <p><strong>الجواب:</strong> في الواقع، لو جريت يوم واحد ما بتلاحظ فرق في وزنك. وزنك يحتاج أسابيع من النظام
+                عشان ينزل كيلو واحد. بدون الـ Accumulator Pattern، كل <code>step()</code> ستحسب
+                <code>weight + (-0.05)</code> ثم تعمل <code>round()</code>، والنتيجة ستكون <strong>دائماً 0
+                    تغيير</strong> لأن 0.05 تُقرّب لـ 0.</p>
+            <p><strong>الحل:</strong> نخزّن الكسور في متغير <code>_acc_weight</code> ونراكمها. لما يوصل التراكم لـ 1.0
+                أو -1.0، نغيّر المستوى الفعلي في الـ State. هذا خلّى A* Search يقدر يشوف تأثير 20 يوم من الدايت على
+                الوزن، بدلاً من أن يرجع خطة فارغة.</p>
+        </div>
+
+        <div class="callout danger">
+            <h3>س9: كيف بتضمنوا سلامة المستخدم وما توصوه بتمارين خطيرة؟</h3>
+            <p><strong>الجواب:</strong> عبر 3 آليات:</p>
+            <ol>
+                <li><strong>Requirements Check:</strong> كل تمرين له متطلبات. الـ HIIT يتطلب <code>fitness >= 4</code> و
+                    <code>energy >= 2</code>. لو المستخدم ما يستوفيها، الـ Environment يمنع التمرين ويجبره على Rest مع
+                    عقوبة <code>-2.0</code>.</li>
+                <li><strong>Progressive Fatigue Penalty:</strong> عقوبة الإرهاق متصاعدة:
+                    <ul>
+                        <li>Fatigue = 2: <code>-0.5</code> (تحذير)</li>
+                        <li>Fatigue = 3: <code>-2.0</code> (خطر)</li>
+                        <li>Fatigue = 4: <code>-4.0</code> (إصابة — أقوى عقوبة في النظام)</li>
+                    </ul>
+                </li>
+                <li><strong>Energy Depletion Penalty:</strong> لو الطاقة وصلت 0: <code>-2.5</code>. هذا يجبر الـ Agent
+                    يتعلم أن الراحة ضرورية.</li>
+            </ol>
+        </div>
+
+        <div class="callout danger">
+            <h3>س10: شنو الـ Potential-Based Reward Shaping (PBRS) وليش استخدمتوه؟</h3>
+            <p><strong>الجواب:</strong> بدون PBRS، الـ Agent يحتاج آلاف الـ Episodes عشان يكتشف إن الأفعال اللي تقربه من
+                الهدف هي الأفضل — لأن المكافأة الكبيرة (Goal Achievement Bonus) تأتي فقط في نهاية الـ Episode.</p>
+            <p>الـ PBRS يعطي الـ Agent "تلميحات" مستمرة (Dense Reward) كل خطوة:</p>
+            <pre><code>shaping = γ × φ(s') - φ(s)
+حيث φ(s) = -distance_to_goal(s)</code></pre>
+            <p><strong>الميزة الرياضية:</strong> Ng et al. (1999) أثبتوا أن هذا الشكل المحدد من الـ Shaping <strong>لا
+                    يغير الـ Optimal Policy</strong>. يعني الـ Agent يتعلم أسرع لكن يوصل لنفس النتيجة النهائية — ما فيه
+                "غش".</p>
+        </div>
+
+    </div>
+</body>
+
+</html>

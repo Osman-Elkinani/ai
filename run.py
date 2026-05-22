@@ -22,6 +22,7 @@ def run_cli_demo():
     from agents.q_learning_agent import QLearningAgent
     from agents.approx_q_agent import ApproximateQLearningAgent
     from agents.search_agent import AStarSearchAgent
+    from config import MAX_SEARCH_DEPTH
 
     print("\n" + "=" * 60)
     print("  🏋️  AI Health & Fitness — CLI Demo")
@@ -58,9 +59,9 @@ def run_cli_demo():
 
     # ── A* Search ──
     print("\n" + "-" * 40)
-    print("🔍 Running A* Search (depth=14)...")
+    print(f"🔍 Running A* Search (depth={MAX_SEARCH_DEPTH})...")
     search_env = FitnessEnv(user_profile=profile)
-    search_agent = AStarSearchAgent(search_env, max_depth=14)
+    search_agent = AStarSearchAgent(search_env, max_depth=MAX_SEARCH_DEPTH)
     search_result = search_agent.search()
     print(f"  ✅ Status: {search_result['status']}")
     print(f"  ✅ Plan Length: {search_result['plan_length']} days")

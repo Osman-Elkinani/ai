@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>📐 04. Value Iteration والحل الدقيق — AI Health Project</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+      mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+    </script>
+</head>
+<body>
+    
+    <div class="sidebar">
+        <h2>📚 التوثيق الشامل</h2>
+        <ul>
+            <li><a href="index.html" >🏠 00. النظرة الشاملة وهيكلة المشروع</a></li>
+<li><a href="01_mdp.html" >🎲 01. المعمارية الرياضية لبيئة (MDP)</a></li>
+<li><a href="02_qlearning.html" >🧠 02. تفصيل خوارزمية Q-Learning</a></li>
+<li><a href="03_approx_q.html" >⚡ 03. Approximate Q-Learning والخصائص</a></li>
+<li><a href="04_value_iteration.html" class="active">📐 04. Value Iteration والحل الدقيق</a></li>
+<li><a href="05_astar.html" >🔍 05. A* Search والتخطيط المستقبلي</a></li>
+<li><a href="06_dashboard.html" >🖥️ 06. واجهة المستخدم والـ APIs</a></li>
+<li><a href="07_defense_faq.html" >🛡️ 07. الأسئلة المتوقعة والردود الأكاديمية</a></li>
+
+        </ul>
+    </div>
+    
+    <div class="content">
+        
+<h1>📐 04. Value Iteration والحل الدقيق (محاضرة 8)</h1>
+<p>موجودة في ملف <code>agents/value_iteration_agent.py</code>.</p>
+
+<h2>1. النموذج الكامل (Model-Based)</h2>
+<p>خوارزمية Value Iteration لا تحتاج إلى التدريب بالحلقات (No Episodes). هي تفترض أنها تعرف بدقة (الديناميكية) للبيئة (أي دالة <code>Transition Model T(s, a, s')</code> ودالة <code>Reward Model R(s, a)</code>).</p>
+<p>بما أن بيئتنا هي بيئة برمجية يمكن استنساخها (Clone)، تمكنا من برمجة دالة <code>get_deterministic_next_state(state, action)</code> التي تخبر الوكيل تماماً بما سيحدث إذا نفذ فعلاً ما دون الحاجة لتجريبه.</p>
+
+<h2>2. تقليص مساحة البحث للسرعة الحسابية</h2>
+<p>لأن Value Iteration يعاني من ثقل الحسابات (يجب أن يحسب كل فعل في كل حالة مراراً وتكراراً)، قمنا بهندسة ذكية لتقليص فضاء الحالات:</p>
+<p>بما أن الـ "يوم" (Day) لا يؤثر بشكل مباشر على الحسابات الرياضية للمكافأة، قمنا بإهمال متغير اليوم داخل خوارزمية الـ Value Iteration.
+<br>الفضاء القديم: 10 × 5 × 5 × 5 × 5 × 7 = 43,750 حالة.
+<br><strong>الفضاء الجديد المقلص:</strong> 10 × 5 × 5 × 5 × 5 = <strong>6,250 حالة فقط.</strong></p>
+
+<h2>3. حلقة معادلة بلمان (Bellman Loop)</h2>
+<p>الخوارزمية تمر على الـ 6,250 حالة في <code>while True</code> loop، وتطبق المعادلة:</p>
+<pre><code>V_new(s) = max_a [ R(s,a) + γ * V(s') ]</code></pre>
+<p>تستمر الحلقة حتى يصبح الـ <code>delta</code> (أكبر تغيير حدث في القيمة) أصغر من <code>theta = 0.01</code>. هذا يعني أن القيم استقرت ووصلنا للحل الأمثل رياضياً (Convergence).</p>
+
+<h2>4. استخراج السياسة (Policy Extraction)</h2>
+<p>كيف نستخدم هذا الـ V-Table (الذي يحتوي قيماً من نوع float لكل حالة) لنتخذ قراراً؟ عبر دالة الـ One-Step Lookahead:</p>
+<pre><code>best_action = None
+max_value = -float('inf')
+
+for action in all_actions:
+    next_state = env.simulate_deterministic(state, action)
+    reward = env.calculate_reward(state, next_state, action)
+    
+    # القيمة الكلية = المكافأة الفورية + قيمة الحالة القادمة
+    action_value = reward + gamma * V[next_state]
+    
+    if action_value > max_value:
+        max_value = action_value
+        best_action = action</code></pre>
+
+<div class="callout info">
+    <strong>مقارنة الأداء:</strong><br>
+    بينما Q-Learning يحتاج بضعة ثوان للتدريب على عينة من الحالات، Value Iteration قد يستغرق 30-60 ثانية لتحديث 6,250 حالة بشكل متكرر، لكنه يضمن لك الحل الرياضي الأمثل والأكثر دقة (Exact Optimal Policy).
+</div>
+
+    </div>
+</body>
+</html>

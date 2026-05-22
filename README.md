@@ -99,6 +99,7 @@ Key hyperparameters can be adjusted in `config.py`:
 | `EPSILON_DECAY` | 0.995 | Exploration decay per episode |
 | `NUM_EPISODES` | 500 | Default training episodes |
 | `MAX_STEPS_PER_EPISODE` | 30 | Days per simulation episode |
+| `MAX_SEARCH_DEPTH` | 30 | A* search planning horizon |
 
 ## 👥 Team
 

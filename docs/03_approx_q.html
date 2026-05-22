@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>⚡ 03. Approximate Q-Learning والخصائص — AI Health Project</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+      mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+    </script>
+</head>
+<body>
+    
+    <div class="sidebar">
+        <h2>📚 التوثيق الشامل</h2>
+        <ul>
+            <li><a href="index.html" >🏠 00. النظرة الشاملة وهيكلة المشروع</a></li>
+<li><a href="01_mdp.html" >🎲 01. المعمارية الرياضية لبيئة (MDP)</a></li>
+<li><a href="02_qlearning.html" >🧠 02. تفصيل خوارزمية Q-Learning</a></li>
+<li><a href="03_approx_q.html" class="active">⚡ 03. Approximate Q-Learning والخصائص</a></li>
+<li><a href="04_value_iteration.html" >📐 04. Value Iteration والحل الدقيق</a></li>
+<li><a href="05_astar.html" >🔍 05. A* Search والتخطيط المستقبلي</a></li>
+<li><a href="06_dashboard.html" >🖥️ 06. واجهة المستخدم والـ APIs</a></li>
+<li><a href="07_defense_faq.html" >🛡️ 07. الأسئلة المتوقعة والردود الأكاديمية</a></li>
+
+        </ul>
+    </div>
+    
+    <div class="content">
+        
+<h1>⚡ 03. Approximate Q-Learning والخصائص (محاضرة 10)</h1>
+<p>موجودة في ملف <code>agents/approx_q_agent.py</code>.</p>
+
+<h2>1. الدافع المعماري (المشكلة مع Q-Learning)</h2>
+<p>في الـ Q-Learning العادي (Tabular)، لو تدرب الوكيل على حالة (لياقة=4، طاقة=3) وواجه لأول مرة في حياته حالة (لياقة=5، طاقة=3)، سيقف عاجزاً ويتصرف بعشوائية لأنه لا يملك خانة لها في الجدول! لا يوجد لديه استنتاج أو تعميم (Generalization).</p>
+
+<h2>2. الحل: Linear Function Approximation</h2>
+<p>استبدلنا الجدول الضخم بـ "معادلة خطية" بسيطة تعتمد على الأوزان (Weights) والخصائص (Features).</p>
+<pre><code>Q(s, a) = w1*f1 + w2*f2 + ... + wn*fn</code></pre>
+<p>إذا واجه الوكيل حالة جديدة، يقوم باستخراج خصائصها وضربها في الأوزان التي تعلمها ليستنتج قيمة ممتازة.</p>
+
+<h2>3. هندسة الخصائص (Feature Engineering)</h2>
+<p>قمنا بتعريف 12 Feature تعطي الوكيل إدراكاً عميقاً لما يحدث. في كود <code>extract_features(state, action)</code> تم تطبيع كل القيم (Normalization) لتكون بين 0 و 1 لتسريع استقرار الأوزان:</p>
+<ul>
+    <li><code>bias</code>: دائماً 1.0 (كقيمة ثابتة أساسية للتقاطع).</li>
+    <li><code>fitness_level</code>: اللياقة الحالية مقسومة على 9.</li>
+    <li><code>energy_level</code>: الطاقة الحالية مقسومة على 4.</li>
+    <li><code>fatigue_level</code>: الإرهاق مقسوم على 4.</li>
+    <li><code>distance_to_goal</code>: دالة الـ Heuristic مقسومة على الحد الأقصى المتوقع للمسافة لتكون بين 0 و 1.</li>
+    <li><strong>أعلام الأفعال (Action Flags):</strong> هل الفعل هو Cardio؟ (0 أو 1)، هل هو Strength؟ هل هو Rest؟ هل هو Deficit؟</li>
+    <li><strong>تقاطعات (Intersections):</strong> ميزة خاصة تُفعل فقط إذا كان الإرهاق عالي جداً والفعل المختار هو Rest. هذا يعلم الوزن أن الراحة عند التعب هي الخيار الأفضل.</li>
+</ul>
+
+<h2>4. التحديث وتعديل الأوزان (Weight Update)</h2>
+<p>بدلاً من تحديث جدول الـ Q، نحدث مصفوفة الأوزان التي حجمها 12 فقط!</p>
+<pre><code>td_error = (reward + self.gamma * max_next_q) - current_q
+
+# تحديث كل وزن بناءً على خطأ التوقع وقيمة الخاصية
+for i in range(len(self.weights)):
+    self.weights[i] += self.learning_rate * td_error * features[i]</code></pre>
+<div class="callout success">
+    <strong>النتيجة والأداء:</strong><br>
+    هذا الوكيل يتعلم أسرع بكثير من Q-Learning العادي، وتكون منحنياته في الـ Learning Curve أكثر استقراراً مبكراً (في أول 500 حلقة) لأنه يطبق ما تعلمه في حالة واحدة على بقية الحالات المشابهة.
+</div>
+
+    </div>
+</body>
+</html>

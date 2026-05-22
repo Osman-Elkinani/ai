@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>📐 العضو 4 — VI + A* Search</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="sidebar">
+        <h2>📚 ملفات الفريق</h2>
+        <ul>
+            <li><a href="01_leader.html">👑 Leader — النظرة الشاملة</a></li>
+            <li><a href="02_environment.html">🎲 العضو 2 — MDP Environment</a></li>
+            <li><a href="03_rl_agents.html">🧠 العضو 3 — RL Agents</a></li>
+            <li><a href="04_planning.html" class="active">📐 العضو 4 — VI + A* Search</a></li>
+            <li><a href="05_dashboard.html">🖥️ العضو 5 — Web Dashboard</a></li>
+        </ul>
+        <div class="team-badge">
+            <strong>📐 هذا الملف: العضو 4</strong>
+            Model-Based Planning, Value Iteration, A* Search
+        </div>
+    </div>
+
+    <div class="content">
+
+        <span class="member-badge m3">📐 MEMBER 4 — Planning & Exact Solutions</span>
+        <h1>التخطيط والحلول الدقيقة — VI & A*</h1>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>1. الربط بالمنهج — Model-Based Planning (Lectures 3 & 8)</h2>
+
+        <p>عكس الـ Q-Learning اللي يكتشف البيئة بالتجربة، وكلاء التخطيط (Planning Agents) يمتلكون <strong>خريطة كاملة للبيئة</strong> (Transition Model & Reward Function). من خلال هذه الخريطة، يقدرون يخططون للحل المثالي <strong>قبل اتخاذ أي خطوة فعلية</strong>.</p>
+        
+        <p>في مشروعنا، בניنا שני Model-Based Agents:</p>
+        <ul>
+            <li><code>ValueIterationAgent</code> (Lecture 8): يحل معادلة Bellman بشكل دقيق (Exact Solution) لكل الـ States.</li>
+            <li><code>AStarSearchAgent</code> (Lecture 3): يبحث عن الـ Optimal Path للهدف باستخدام Graph Search و Heuristic.</li>
+        </ul>
+        
+        <div class="callout warn">
+            <h3>⚠️ Deterministic Assumption</h3>
+            <p>خوارزميات التخطيط الكلاسيكية تفترض بيئة <strong>Deterministic</strong> (لا توجد عشوائية). عشان كدا، هذي הـ Agents تستخدم دالة <code>env.get_deterministic_next_state()</code> بدلاً من <code>env.step()</code> لتجنب الـ Stochastic Noise.</p>
+        </div>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>2. Value Iteration — <code>value_iteration_agent.py</code></h2>
+
+        <p>الـ Value Iteration (Lecture 8) هو خوارزمية Dynamic Programming تهدف لحساب הـ Optimal Value <code>V*(s)</code> لكل State في הـ MDP، ومن ثم استخراج الـ Optimal Policy <code>π*(s)</code>.</p>
+
+        <h3>2.1 State Space Reduction</h3>
+        <p>الـ State Space الأصلي فيه 43,750 حالة. الـ Value Iteration يحتاج يمر على كل الـ States في كل حلقة (Iteration). عشان نسرّع الحسابات، شلنا הـ <code>day_of_week</code> (متغير دوري لا يؤثر على הـ Transitions الأساسية)، فصار الحجم:</p>
+        <pre><code>Reduced State Space = 10 × 5 × 5 × 5 × 5 = 6,250 States</code></pre>
+        <p>هذا يسرّع الخوارزمية 7 أضعاف، ويخليها تخلص في ~60 ثانية بدل 7 דقائق.</p>
+
+        <h3>2.2 The Bellman Update Loop</h3>
+        <p>الخوارزمية تطبق معادلة Bellman Optimality على كل הـ 6,250 States لحد ما يصير הـ Change (Δ) أصغر من <code>theta = 0.01</code> (Convergence):</p>
+        
+        <pre><code>def solve(self):
+    while True:
+        delta = 0
+        # 1. Loop over ALL 6,250 states
+        for state in self.all_states:
+            v_old = self.V[state]
+            
+            # 2. Find max Q-value across all 28 actions
+            max_q = float('-inf')
+            for action in range(self.num_actions):
+                # Model-Based: We KNOW the exact next_state and reward!
+                next_state, _ = self.env.get_deterministic_next_state(state, action)
+                reward = self._compute_reward(state, next_state, action)
+                
+                # Q(s,a) = R(s,a,s') + γ * V(s')
+                q_value = reward + self.gamma * self.V[next_state]
+                max_q = max(max_q, q_value)
+                
+            # 3. V(s) = max_a Q(s,a)
+            self.V[state] = max_q
+            
+            # 4. Update max change
+            delta = max(delta, abs(v_old - max_q))
+            
+        # 5. Convergence check
+        if delta < self.theta:
+            break</code></pre>
+
+        <h3>2.3 Policy Extraction</h3>
+        <p>بعد ما نلاقي הـ <code>V*</code>، نستخرج הـ Optimal Policy. הـ Agent لما ينسأل "شنو أسوي الحين؟"، ينفذ <strong>One-Step Lookahead</strong>:</p>
+        <pre><code>def get_action(self, state):
+    best_action = None
+    best_value = float('-inf')
+    
+    # Calculate Q(s,a) for all actions and pick the max
+    for action in self.env.valid_workout_indices:
+        next_state, _ = self.env.get_deterministic_next_state(state, action)
+        reward = self._compute_reward(state, next_state, action)
+        
+        value = reward + self.gamma * self.V[next_state]
+        if value > best_value:
+            best_value = value
+            best_action = action
+            
+    return best_action</code></pre>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>3. A* Search — <code>search_agent.py</code></h2>
+
+        <p>من Lecture 3: הـ A* Search هو Informed Search Algorithm يضمن إيجاد הـ Optimal Path אם كانت הـ Heuristic <strong>Admissible</strong>.</p>
+
+        <h3>3.1 SearchNode Design</h3>
+        <p>كل Node في شجرة البحث يحتوي على:</p>
+        <ul>
+            <li><code>state</code>: حالة הـ Environment.</li>
+            <li><code>actions</code>: المسار (List of actions) من البداية لهذه הـ Node.</li>
+            <li><code>g_cost</code>: التكلفة الفعلية حتى الآن (نستخدم הـ <strong>Negative Reward</strong> كـ Cost لأن A* يبحث عن הـ Minimum Cost).</li>
+            <li><code>h_cost</code>: تقدير المسافة للهدف (الـ Heuristic).</li>
+            <li><code>f_cost</code> = <code>g_cost + h_cost</code>: הـ Priority اللي نستخدمها في הـ Priority Queue.</li>
+            <li><code>accumulators</code>: الـ <strong>Accumulator Pattern State</strong> (مهم جداً).</li>
+        </ul>
+
+        <div class="callout ok">
+            <h3>✅ The Accumulator Propagation</h3>
+            <p>לما A* يولد Successor Nodes، لازم <strong>ينسخ ويمرر הـ Accumulators</strong> للـ Child Node. بدون تمرير הـ Accumulators الفراكشنية، A* بيحسب <code>weight + (-0.05) = weight</code>، وراح يعتقد إن הـ Diet ماله أي فائدة، ويفشل في إيجاد مسار للهدف.</p>
+        </div>
+
+        <h3>3.2 הـ Graph Search Algorithm</h3>
+        <p>طبقنا الـ Graph Search (من Lecture 3) باستخدام הـ <code>closed</code> Set لمنع الـ Agent من زيارة نفس הـ State مرتين والوقوع في Infinite Loops:</p>
+
+        <pre><code>def search(self, start_state):
+    # 1. Initialize Frontier (Priority Queue) with start node
+    frontier = [start_node]
+    heapq.heapify(frontier)
+    
+    # 2. Initialize Closed Set (Graph Search optimization)
+    closed = set()
+    
+    while frontier and nodes_expanded < self.beam_width:
+        # 3. Pop node with lowest f(n)
+        current = heapq.heappop(frontier)
+        
+        if self._is_goal(current.state):
+            return current.actions  # Solution Found!
+            
+        # 4. Skip if already visited
+        if current.state in closed:
+            continue
+        closed.add(current.state)
+        
+        # 5. Expand successors
+        for action in range(NUM_ACTIONS):
+            next_state, new_acc = self.env.get_deterministic_next_state(
+                current.state, action, current.accumulators
+            )
+            
+            # g(n') = g(n) + step_cost (Negative Reward)
+            step_reward = self._estimate_reward(current.state, next_state, action)
+            new_g = current.g_cost - step_reward
+            
+            # h(n')
+            new_h = self.env.state_distance_to_goal(next_state)
+            
+            successor = SearchNode(next_state, new_g, new_h, new_acc)
+            heapq.heappush(frontier, successor)</code></pre>
+
+        <h3>3.3 Heuristic Admissibility</h3>
+        <p>كما شُرح في ملف الـ Environment (العضو 2)، دالة <code>state_distance_to_goal()</code> تعتبر <strong>Admissible Heuristic</strong> لأنها دائماً تقلل (Underestimate) من التكلفة الحقيقية (تفترض الوصول للهدف بأقصى سرعة ممكنة وبدون أي Fatigue Penalties).</p>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>4. مقارنة: A* Search vs Value Iteration</h2>
+        
+        <table>
+            <tr><th>الخاصية</th><th>A* Search</th><th>Value Iteration</th></tr>
+            <tr>
+                <td><strong>الناتج (Output)</strong></td>
+                <td>مسار واحد (Sequence of Actions) لـ State واحدة.</td>
+                <td>Policy كاملة (أفضل Action) لكل הـ 6,250 States.</td>
+            </tr>
+            <tr>
+                <td><strong>نطاق البحث</strong></td>
+                <td>يبحث محلياً (Local Search) باتجاه الهدف.</td>
+                <td>يحسب الـ Value لكل State في النظام (Global).</td>
+            </tr>
+            <tr>
+                <td><strong>سرعة التنفيذ</strong></td>
+                <td>سريع جداً (أقل من 3 ثوانٍ).</td>
+                <td>بطيء (يأخذ ~60 ثانية لحل الـ State Space الكامل).</td>
+            </tr>
+            <tr>
+                <td><strong>التعامل مع הـ Stochasticity</strong></td>
+                <td>يفشل إذا كانت البيئة Stochastic (يحتاج Deterministic Path).</td>
+                <td>نظرياً يقدر يتعامل مع Stochasticity لو הـ Model كان يعطي Probabilities، لكن هنا استخدمنا Deterministic للتبسيط وتجنب Loop الـ Probabilities المعقد.</td>
+            </tr>
+        </table>
+
+    </div>
+</body>
+
+</html>

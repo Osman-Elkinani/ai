@@ -155,11 +155,11 @@
                     <div class="card-body">
                         <div class="form-group">
                             <label for="episodes-input">Training Episodes</label>
-                            <input type="number" id="episodes-input" class="form-input" value="3000" min="50" max="10000" step="50">
+                            <input type="number" id="episodes-input" class="form-input" value="5000" min="50" max="10000" step="50">
                         </div>
                         <div class="form-group">
                             <label for="search-depth">A* Search Depth (days)</label>
-                            <input type="number" id="search-depth" class="form-input" value="14" min="5" max="21">
+                            <input type="number" id="search-depth" class="form-input" value="30" min="5" max="30">
                         </div>
                         <div class="params-grid">
                             <div class="form-group compact">
@@ -226,6 +226,10 @@
             <button class="btn btn-accent btn-lg" id="btn-train" onclick="trainAgents()">
                 <span>①</span> Train AI
                 <small>Train the RL agents</small>
+            </button>
+            <button class="btn btn-red btn-lg" id="btn-stop-train" onclick="stopTraining()" style="display:none;">
+                <span>🛑</span> Stop
+                <small>Halt training</small>
             </button>
             <button class="btn btn-green btn-lg" id="btn-simulate" onclick="simulateStep()">
                 <span>②</span> Simulate Day

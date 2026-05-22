@@ -125,7 +125,7 @@ class ApproximateQLearningAgent:
         features[5] = fatigue / (FATIGUE_LEVELS - 1)                     # Fatigue
 
         # ── Action features (one-hot style) ──
-        features[6] = 1.0 if workout_idx in [2, 6, 7] else 0.0  # Cardio
+        features[6] = 1.0 if workout_idx in [2, 5, 6] else 0.0  # Cardio (jogging, swimming, cycling)
         features[7] = 1.0 if workout_idx == 4 else 0.0          # Strength
         features[8] = 1.0 if workout_idx == 0 else 0.0          # Rest
         features[9] = 1.0 if nutrition_idx == 3 else 0.0        # High protein

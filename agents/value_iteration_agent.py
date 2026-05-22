@@ -135,15 +135,17 @@ class ValueIterationAgent:
                 reward += 1.0
             reward += (new_e - old_e) * 0.5
 
-        # Universal penalties
+        # Universal penalties (synced with FitnessEnv._calculate_reward)
         if new_fat >= 4:
-            reward -= 3.0
+            reward -= 4.0   # Severe: injury risk zone
         elif new_fat >= 3:
-            reward -= 1.5
+            reward -= 2.0   # High: unsustainable
+        elif new_fat >= 2 and old_fat < 2:
+            reward -= 0.5   # Moderate: early warning
         if new_e <= 0:
-            reward -= 2.0
+            reward -= 2.5   # Exhaustion: dangerous
         elif new_e <= 1:
-            reward -= 0.5
+            reward -= 0.8   # Low energy: suboptimal
         reward -= 0.1
 
         return reward

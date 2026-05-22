@@ -14,40 +14,43 @@ let approxTrainingData = null;
 let viData = null;
 let isAutoSimulating = false;
 
-// ═══════════════ CHART CONFIGURATION (Impeccable Register) ═══════════════
-// Restrained OKLCH-derived palette, minimal grid, bottom legend, no fill.
+// ═══════════════ CHART CONFIGURATION (Professional Blue) ═══════════════
 const PALETTE = {
-    indigo:  '#5b3ac2',   // oklch(0.45 0.18 280) — primary accent
-    teal:    '#1590a8',   // oklch(0.58 0.12 200) — secondary
-    emerald: '#1a8a68',   // oklch(0.54 0.13 160) — tertiary
-    coral:   '#b94444',   // oklch(0.52 0.15 25)  — danger/fatigue
-    grid:    'rgba(0,0,0,0.04)',
-    tick:    '#8b8fa3',
-    legend:  '#5c5f73',
+    blue:    '#3b82f6',   // Primary — electric blue
+    cyan:    '#06b6d4',   // Secondary — cyan
+    green:   '#22c55e',   // Tertiary — emerald
+    red:     '#ef4444',   // Danger — coral red
+    purple:  '#a78bfa',   // Accent — purple
+    amber:   '#f59e0b',   // Warning — amber
+    grid:    'rgba(255, 255, 255, 0.04)',
+    tick:    '#64748b',
+    legend:  '#94a3b8',
 };
 
 const CHART_DEFAULTS = {
     responsive: true,
     maintainAspectRatio: false,
-    animation: { duration: 300, easing: 'easeOutQuart' },
+    animation: { duration: 400, easing: 'easeOutQuart' },
     interaction: { mode: 'index', intersect: false },
     plugins: {
         legend: {
             position: 'bottom',
             labels: {
                 color: PALETTE.legend,
-                font: { family: 'Inter, sans-serif', size: 11, weight: 500 },
-                padding: 16,
+                font: { family: 'Inter, sans-serif', size: 11, weight: 600 },
+                padding: 18,
                 usePointStyle: true,
                 pointStyleWidth: 10,
             }
         },
         tooltip: {
-            backgroundColor: 'rgba(30,30,50,0.92)',
+            backgroundColor: 'rgba(30, 41, 59, 0.95)',
+            borderColor: 'rgba(59, 130, 246, 0.2)',
+            borderWidth: 1,
             titleFont: { family: 'Inter, sans-serif', size: 12 },
             bodyFont: { family: 'Inter, sans-serif', size: 11 },
-            padding: 10,
-            cornerRadius: 8,
+            padding: 12,
+            cornerRadius: 10,
             displayColors: true,
             boxPadding: 4,
         }
@@ -92,8 +95,8 @@ function initCharts() {
                 {
                     label: 'Q-Learning',
                     data: [],
-                    borderColor: PALETTE.indigo,
-                    backgroundColor: PALETTE.indigo,
+                    borderColor: PALETTE.blue,
+                    backgroundColor: PALETTE.blue,
                     borderWidth: 1.5,
                     pointRadius: 0,
                     tension: 0.35,
@@ -102,8 +105,8 @@ function initCharts() {
                 {
                     label: 'Approx Q-Learning',
                     data: [],
-                    borderColor: PALETTE.teal,
-                    backgroundColor: PALETTE.teal,
+                    borderColor: PALETTE.cyan,
+                    backgroundColor: PALETTE.cyan,
                     borderWidth: 1.5,
                     pointRadius: 0,
                     tension: 0.35,
@@ -130,8 +133,8 @@ function initCharts() {
                 {
                     label: 'Fitness',
                     data: [],
-                    borderColor: PALETTE.indigo,
-                    backgroundColor: PALETTE.indigo,
+                    borderColor: PALETTE.blue,
+                    backgroundColor: PALETTE.blue,
                     borderWidth: 2,
                     pointRadius: 2,
                     pointHoverRadius: 5,
@@ -140,8 +143,8 @@ function initCharts() {
                 {
                     label: 'Energy',
                     data: [],
-                    borderColor: PALETTE.teal,
-                    backgroundColor: PALETTE.teal,
+                    borderColor: PALETTE.cyan,
+                    backgroundColor: PALETTE.cyan,
                     borderWidth: 1.5,
                     pointRadius: 2,
                     pointHoverRadius: 5,
@@ -150,8 +153,8 @@ function initCharts() {
                 {
                     label: 'Muscle',
                     data: [],
-                    borderColor: PALETTE.emerald,
-                    backgroundColor: PALETTE.emerald,
+                    borderColor: PALETTE.green,
+                    backgroundColor: PALETTE.green,
                     borderWidth: 1.5,
                     pointRadius: 2,
                     pointHoverRadius: 5,
@@ -160,8 +163,8 @@ function initCharts() {
                 {
                     label: 'Fatigue',
                     data: [],
-                    borderColor: PALETTE.coral,
-                    backgroundColor: PALETTE.coral,
+                    borderColor: PALETTE.red,
+                    backgroundColor: PALETTE.red,
                     borderWidth: 1.5,
                     pointRadius: 0,
                     tension: 0.3,
@@ -285,10 +288,27 @@ function updateStateDisplay(state) {
 }
 
 // ═══════════════ TRAINING (BATCH WITH LIVE PROGRESS) ═══════════════
+let isTraining = false;
+let cancelTraining = false;
+
+function stopTraining() {
+    cancelTraining = true;
+    const stopBtn = document.getElementById('btn-stop-train');
+    if (stopBtn) stopBtn.innerHTML = '<span>⏳</span> Stopping...';
+}
+
 async function trainAgents() {
+    if (isTraining) return;
+    
     const totalEpisodes = parseInt(document.getElementById('episodes-input').value) || 500;
     const batchSize = 50;
     const numBatches = Math.ceil(totalEpisodes / batchSize);
+
+    isTraining = true;
+    cancelTraining = false;
+    document.getElementById('btn-train').style.display = 'none';
+    document.getElementById('btn-stop-train').style.display = 'flex';
+    document.getElementById('btn-stop-train').innerHTML = '<span>🛑</span> Stop<small>Halt training</small>';
 
     // Show progress banner (not full-screen, so charts stay visible)
     showLoading(`Training agents — 0 / ${totalEpisodes} episodes`);
@@ -305,6 +325,11 @@ async function trainAgents() {
 
     try {
         for (let i = 0; i < numBatches; i++) {
+            if (cancelTraining) {
+                console.log('Training stopped by user.');
+                break;
+            }
+
             const eps = Math.min(batchSize, totalEpisodes - i * batchSize);
             const resume = i > 0;
 
@@ -362,6 +387,9 @@ async function trainAgents() {
         console.error('Training error:', err);
     }
 
+    isTraining = false;
+    document.getElementById('btn-train').style.display = 'flex';
+    document.getElementById('btn-stop-train').style.display = 'none';
     document.getElementById('progress-container').style.display = 'none';
     hideLoading();
 }

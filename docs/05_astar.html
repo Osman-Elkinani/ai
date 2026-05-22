@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>🔍 05. A* Search والتخطيط المستقبلي — AI Health Project</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+      mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+    </script>
+</head>
+<body>
+    
+    <div class="sidebar">
+        <h2>📚 التوثيق الشامل</h2>
+        <ul>
+            <li><a href="index.html" >🏠 00. النظرة الشاملة وهيكلة المشروع</a></li>
+<li><a href="01_mdp.html" >🎲 01. المعمارية الرياضية لبيئة (MDP)</a></li>
+<li><a href="02_qlearning.html" >🧠 02. تفصيل خوارزمية Q-Learning</a></li>
+<li><a href="03_approx_q.html" >⚡ 03. Approximate Q-Learning والخصائص</a></li>
+<li><a href="04_value_iteration.html" >📐 04. Value Iteration والحل الدقيق</a></li>
+<li><a href="05_astar.html" class="active">🔍 05. A* Search والتخطيط المستقبلي</a></li>
+<li><a href="06_dashboard.html" >🖥️ 06. واجهة المستخدم والـ APIs</a></li>
+<li><a href="07_defense_faq.html" >🛡️ 07. الأسئلة المتوقعة والردود الأكاديمية</a></li>
+
+        </ul>
+    </div>
+    
+    <div class="content">
+        
+<h1>🔍 05. A* Search والتخطيط المستقبلي (محاضرة 3)</h1>
+<p>موجودة في ملف <code>agents/search_agent.py</code>.</p>
+
+<h2>1. فكرة التخطيط بدلاً من التفاعل (Planning vs Reacting)</h2>
+<p>طرق الـ RL (Q-Learning و Value Iteration) هي طرق <strong>تفاعلية (Reactive)</strong>، أي أنها تسأل: "أنا الآن في حالة كذا، ماذا أفعل؟".</p>
+<p>بينما الـ A* Search هي طريقة <strong>تخطيط (Planning)</strong>، تسأل: "أنا الآن في نقطة البداية، كيف أرسم خطة متكاملة من 30 خطوة متتالية توصلني للهدف بأقل تكلفة (Cost)؟".</p>
+
+<h2>2. تمثيل الـ Node والتكلفة G(n)</h2>
+<p>في شجرة البحث، كل عقدة (Node) تحتوي على:</p>
+<ul>
+    <li><code>state</code>: الحالة الحالية للجسم.</li>
+    <li><code>accumulators</code>: نسخة من المتغيرات التراكمية الحالية (ضرورية جداً لكي يحسب A* تأثير الدايت الطويل على الوزن).</li>
+    <li><code>path</code>: مسار الأفعال منذ نقطة البداية.</li>
+    <li><code>g_cost</code>: التكلفة الفعلية التراكمية. (بما أننا نبحث عن المكافأة، قمنا بقلب المكافأة لتصبح تكلفة: <code>Cost = 10 - Reward</code>).</li>
+</ul>
+
+<h2>3. تصميم الـ Heuristic H(n) والإثبات الرياضي</h2>
+<p>لكي يكون A* فعالاً ولا يبحث في مسارات لا نهاية لها، يجب توجيهه بدالة Heuristic. ولكي نضمن أن A* سيجد الحل المثالي (Optimal)، يجب أن تكون H(n) <strong>Admissible (غير مبالغة في التقدير)</strong>.</p>
+<pre><code>def _heuristic(self, state, target_state):
+    # حساب الفجوة بين اللياقة الحالية والهدف
+    fitness_gap = max(0, target_state['fitness'] - state[0])
+    
+    # الحد الأقصى للمكافأة التي يمكن الحصول عليها في خطوة واحدة للياقة هو 0.2
+    # إذن، أقل عدد ممكن من الأيام هو:
+    min_steps_fitness = fitness_gap / 0.2
+    
+    # الحد الأقصى للمكافأة في نظامنا هو تقريباً 5
+    # التكلفة المقلوبة: Cost = 10 - 5 = 5 (أقل تكلفة للخطوة)
+    optimistic_cost_per_step = 5.0
+    
+    return min_steps_fitness * optimistic_cost_per_step</code></pre>
+<div class="callout success">
+    <strong>الإثبات الرياضي (Admissibility Proof):</strong><br>
+    بما أننا نفترض أن الوكيل سيحصل على "أعلى مكافأة ممكنة" (أقل تكلفة) في كل خطوة قادمة دون أي إرهاق (وهذا مستحيل عملياً)، فإن الـ Heuristic <strong>دائماً ستقلل من التكلفة الحقيقية (Underestimates the true cost)</strong>، وهو بالضبط الشرط الرياضي للـ Admissibility.
+</div>
+
+<h2>4. حل مشكلة הـ Depth Limit</h2>
+<p>شجرة البحث تتفرع بقوة (Branching factor = 28 فعل). إذا بحثنا لـ 30 يوم، سيكون لدينا $28^{30}$ حالة، وهو رقم فلكي يكسر الميموري.
+<br><strong>الحل:</strong> تطبيق Depth-Bounded A* Search. وضعنا سقف للعمق (مثلاً 14 أو 30) تم تعريفه في <code>config.py (MAX_SEARCH_DEPTH)</code>. إذا وصل A* للعمق الأقصى، يرجع أفضل خطة وجدها حتى لو لم يصل للهدف النهائي تماماً.
+</p>
+
+    </div>
+</body>
+</html>

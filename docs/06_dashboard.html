@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>🖥️ 06. واجهة المستخدم والـ APIs — AI Health Project</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+      mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+    </script>
+</head>
+<body>
+    
+    <div class="sidebar">
+        <h2>📚 التوثيق الشامل</h2>
+        <ul>
+            <li><a href="index.html" >🏠 00. النظرة الشاملة وهيكلة المشروع</a></li>
+<li><a href="01_mdp.html" >🎲 01. المعمارية الرياضية لبيئة (MDP)</a></li>
+<li><a href="02_qlearning.html" >🧠 02. تفصيل خوارزمية Q-Learning</a></li>
+<li><a href="03_approx_q.html" >⚡ 03. Approximate Q-Learning والخصائص</a></li>
+<li><a href="04_value_iteration.html" >📐 04. Value Iteration والحل الدقيق</a></li>
+<li><a href="05_astar.html" >🔍 05. A* Search والتخطيط المستقبلي</a></li>
+<li><a href="06_dashboard.html" class="active">🖥️ 06. واجهة المستخدم والـ APIs</a></li>
+<li><a href="07_defense_faq.html" >🛡️ 07. الأسئلة المتوقعة والردود الأكاديمية</a></li>
+
+        </ul>
+    </div>
+    
+    <div class="content">
+        
+<h1>🖥️ 06. واجهة المستخدم والـ APIs الشاملة</h1>
+<p>تم بناء واجهة الويب لتعكس كل ما يحدث في الـ Backend بشكل مباشر ومرئي، وتسهل مناقشة المشروع واستعراضه.</p>
+
+<h2>1. الـ Backend (سيرفر Flask)</h2>
+<p>في ملف <code>web/app.py</code>، قمنا بتعريف مجموعة من الـ Endpoints للتعامل مع الـ Frontend باستخدام الـ JSON:</p>
+
+<h3>أ. <code>POST /api/setup</code></h3>
+<ul>
+    <li><strong>المدخلات:</strong> JSON يحتوي على اسم الـ Profile المختار (مثل <code>beginner_weight_loss</code>) أو بيانات <code>custom</code> كاملة.</li>
+    <li><strong>العملية:</strong> يهيئ كلاس <code>UserProfile</code> وكلاس <code>FitnessEnv</code> ويمسح الـ Logs السابقة.</li>
+    <li><strong>المخرجات:</strong> حالة الجسم الحالية والأهداف للـ UI.</li>
+</ul>
+
+<h3>ب. <code>POST /api/train</code> (نواة التدريب)</h3>
+<ul>
+    <li><strong>المدخلات:</strong> <code>episodes</code> (عدد الحلقات)، <code>agent</code> (نوع الوكيل)، <code>hyperparams</code> (الهايبر بارامترز)، <code>resume</code> (هل هو تكملة لتدريب سابق أم جديد؟).</li>
+    <li><strong>العملية:</strong> يشغل دالة التدريب للـ Q-learning والـ Approx Q.</li>
+    <li><strong>المخرجات:</strong> مصفوفات الـ Rewards لكل حلقة ليتم رسمها في الـ Chart، بالإضافة للمقاييس النهائية (Stability, Coverage).</li>
+</ul>
+
+<h3>ج. <code>GET /api/value_iteration</code> و <code>POST /api/search</code></h3>
+<p>مسارات مسؤولة عن تشغيل الخوارزميات الثقيلة حسابياً واسترجاع النتائج.</p>
+
+<h2>2. الـ Frontend (التصميم البصري والـ JavaScript)</h2>
+
+<h3>أ. معمارية التصميم (Professional Blue Theme)</h3>
+<p>تم كتابة CSS مخصص بالكامل في <code>style.css</code> يحاكي تصاميم لوحات التحكم الحديثة:</p>
+<ul>
+    <li><strong>الألوان:</strong> استخدام ألوان داكنة (Dark Navy: <code>#0b1120</code>) مع ألوان نيون متوهجة (Electric Blue <code>#3b82f6</code>، Cyan <code>#06b6d4</code>) تناسب العرض بالبروجكتور.</li>
+    <li><strong>Glassmorphism:</strong> استخدام <code>backdrop-filter: blur(16px)</code> للـ Header ليعطي شفافية زجاجية أنيقة.</li>
+    <li><strong>الأنيميشن:</strong> أزرار ديناميكية مع <code>hover elevation</code> وحركات خفيفة للرسوم البيانية وأشرطة التقدم.</li>
+</ul>
+
+<h3>ب. هندسة الـ JavaScript المتقدمة (Chunked Training)</h3>
+<p>من أبرز الإنجازات البرمجية في الواجهة هي دالة <code>trainAgents()</code>. لو قمنا بإرسال طلب واحد للـ Backend ليدرب 5000 حلقة، سيتجمد المتصفح والسيرفر معاً حتى ينتهي التدريب ولن يرى المستخدم أي شيء.
+<br><strong>الحل (Batched Execution):</strong> قمنا بتقسيم التدريب لـ Batches (كل دفعة 50 حلقة).</p>
+<pre><code>for (let i = 0; i < numBatches; i++) {
+    if (cancelTraining) break; // زر الإيقاف (Stop Button) يعمل هنا!
+    
+    // إرسال طلب لـ 50 حلقة فقط مع خاصية (resume = true)
+    const data = await apiCall('/api/train', 'POST', { episodes: 50, resume: true });
+    
+    // تحديث شريط التقدم (Progress Bar) والرسم البياني (Chart) مباشرة
+    updateProgress(pct);
+    updateLearningCurveLive(data);
+}</code></pre>
+<p>هذه المعمارية سمحت لنا بإضافة زر **إيقاف التدريب (Stop Training)**، وعرض منحنى التعلم يرتفع لايف أمام الدكتور.</p>
+
+<h3>ج. دالة المتوسط المتحرك (Moving Average)</h3>
+<p>لأن الـ Rewards تتذبذب بشكل حاد جداً من حلقة لأخرى، قمنا ببرمجة دالة <code>movingAvg()</code> في الـ JS تأخذ متوسط كل 20 نقطة. هذا يجعل الـ Learning Curve المعروض في الـ Chart.js سلساً وواضحاً ومفهوماً أكاديمياً.</p>
+
+    </div>
+</body>
+</html>

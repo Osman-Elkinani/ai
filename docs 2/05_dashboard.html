@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>🖥️ العضو 5 — Web Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="sidebar">
+        <h2>📚 ملفات الفريق</h2>
+        <ul>
+            <li><a href="01_leader.html">👑 Leader — النظرة الشاملة</a></li>
+            <li><a href="02_environment.html">🎲 العضو 2 — MDP Environment</a></li>
+            <li><a href="03_rl_agents.html">🧠 العضو 3 — RL Agents</a></li>
+            <li><a href="04_planning.html">📐 العضو 4 — VI + A* Search</a></li>
+            <li><a href="05_dashboard.html" class="active">🖥️ العضو 5 — Web Dashboard</a></li>
+        </ul>
+        <div class="team-badge">
+            <strong>🖥️ هذا الملف: العضو 5</strong>
+            Presentation Layer, Flask API, JS Logic, UI/UX
+        </div>
+    </div>
+
+    <div class="content">
+
+        <span class="member-badge m4">🖥️ MEMBER 5 — Web Dashboard & API</span>
+        <h1>واجهة المستخدم — Presentation Layer</h1>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>1. معمارية الـ Presentation Layer</h2>
+
+        <p>هذه الطبقة هي واجهة المشروع. دورها هو ربط المستخدم بـ الـ AI Agents اللي شغالة في الـ Backend وعرض النتائج (الـ Metrics والـ Q-Values) بطريقة مرئية سهلة الفهم.</p>
+        
+        <p>مكونات هذه الطبقة:</p>
+        <ul>
+            <li><strong>Backend (Flask API):</strong> <code>app.py</code> — يستقبل الطلبات (HTTP Requests)، يشغل הـ Agents، ويرجع النتائج كـ JSON.</li>
+            <li><strong>Frontend Logic:</strong> <code>dashboard.js</code> — يتحكم في التفاعل، يرسل הـ Requests للـ API، ويرسم הـ Charts.</li>
+            <li><strong>UI/UX:</strong> <code>dashboard.html</code> و <code>style.css</code> — هيكلة الصفحة والتصميم المرئي.</li>
+        </ul>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>2. Backend API — <code>app.py</code></h2>
+
+        <p>בنينا 6 API Endpoints لتسهيل التواصل بين الـ Frontend والـ AI:</p>
+
+        <table>
+            <tr><th>Endpoint</th><th>Method</th><th>الوظيفة</th></tr>
+            <tr>
+                <td><code>/</code></td>
+                <td>GET</td>
+                <td>يعرض صفحة <code>dashboard.html</code> الرئيسية.</td>
+            </tr>
+            <tr>
+                <td><code>/api/profile</code></td>
+                <td>POST</td>
+                <td>يغير הـ User Profile (مثلاً من Beginner לـ Advanced). يعمل Reset לـ Environment.</td>
+            </tr>
+            <tr>
+                <td><code>/api/train</code></td>
+                <td>POST</td>
+                <td>يستقبل عدد الـ Episodes، يشغل הـ RL Agent، ويرجع הـ Metrics כـ JSON.</td>
+            </tr>
+            <tr>
+                <td><code>/api/solve_exact</code></td>
+                <td>POST</td>
+                <td>يشغل Value Iteration أو A* Search ويرجع الحل الكامل.</td>
+            </tr>
+            <tr>
+                <td><code>/api/recommendation</code></td>
+                <td>GET</td>
+                <td>يطلب من הـ Agent المختار تحديد הـ Best Action للـ State الحالية.</td>
+            </tr>
+            <tr>
+                <td><code>/api/take_action</code></td>
+                <td>POST</td>
+                <td>يأخذ הـ Action اللي اختاره المستخدم وينفذ <code>env.step(action)</code>.</td>
+            </tr>
+        </table>
+
+        <div class="callout info">
+            <h3>💡 Stateless API vs Stateful Backend</h3>
+            <p>سيرفر Flask عادة يكون Stateless (لا يحفظ الحالة بين الـ Requests). لكن لأن التدريب مستمر (Continuous Training)، احتجنا نحفظ הـ <code>env</code> والـ <code>agents</code> כـ Global Variables في <code>app.py</code> عشان ما تضيع הـ Q-Table بعد كل Request.</p>
+        </div>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>3. Frontend Logic — <code>dashboard.js</code></h2>
+
+        <p>ملف הـ JS فيه أكثر من 700 سطر כود. أهم ميزاته الهندسية:</p>
+
+        <h3>3.1 Chunked Training (Batching)</h3>
+        <p><strong>المشكلة:</strong> لو طلبنا من Flask يتدرب 5000 Episode دفعة واحدة، הـ Browser سيعلق (Freeze) لمدة 15 ثانية ينتظر الـ Response، والمستخدم بيظن إن الموقع معلّق.</p>
+        <p><strong>الحل (Chunked Training):</strong> قسمنا التدريب إلى <strong>دفعات (Batches)</strong>. كل دفعة 50 Episode. الـ JS يرسل Request لتدريب 50، يستقبل النتائج، يحدث הـ Chart، ثم يرسل Request للـ 50 اللي بعدها.</p>
+        <pre><code>async function trainBatch() {
+    // 1. Check if training was stopped
+    if (!isTraining) return;
+
+    // 2. Train next 50 episodes
+    const response = await fetch('/api/train', { episodes: 50 });
+    const data = await response.json();
+
+    // 3. Update Charts
+    updateCharts(data.metrics);
+
+    // 4. Update Progress Bar
+    const progress = (currentEpisode / totalEpisodes) * 100;
+    updateProgressBar(progress);
+
+    // 5. Schedule next batch (Recursion)
+    if (currentEpisode < totalEpisodes) {
+        setTimeout(trainBatch, 50); // Small delay to unblock UI thread
+    }
+}</code></pre>
+
+        <h3>3.2 زر التوقف الإيقاف (Stop Training)</h3>
+        <p>لأننا نستخدم Chunked Training، صار عندنا القدرة نضيف زر "إيقاف التدريب".</p>
+        <pre><code>let isTraining = false;
+
+// When Stop button is clicked:
+function stopTraining() {
+    isTraining = false;  // This breaks the Recursion in trainBatch()
+    enableButtons();
+    showNotification("Training Stopped by User");
+}</code></pre>
+        <p>الزر يغير הـ Flag <code>isTraining = false</code>، ولما الـ Batch الحالي يخلص، دالة <code>trainBatch</code> بتشيك الـ Flag وتوقف الـ Recursion.</p>
+
+        <h3>3.3 Live Charts (Chart.js)</h3>
+        <p>استخدمنا مكتبة Chart.js لرسم الـ Learning Curves في الـ Real-Time. الـ Charts تتحدث ديناميكياً مع كل Batch يرجع من הـ Server، مما يعطي إحساس للمستخدم أن הـ AI "يتعلم أمامه".</p>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>4. UI/UX & Theming — Professional Blue</h2>
+
+        <p>التصميم مبني بالكامل على CSS Vanilla بدون أي Framework (مثل Tailwind أو Bootstrap) لإثبات القدرة على التحكم الكامل بالـ Styles.</p>
+
+        <h3>4.1 CSS Variables (Design Tokens)</h3>
+        <p>استخدمنا הـ Variables לضمان Consistency في الألوان في كل الصفحة ولتسهيل تغيير הـ Theme مستقبلاً:</p>
+        <pre><code>:root {
+    --bg-color: #0a0f1e;        /* Deep Navy Blue Background */
+    --surface-1: #141c30;       /* Slightly lighter for cards */
+    --accent-blue: #3b82f6;     /* Primary Action Color */
+    --text-primary: #eef2f9;    /* Clean White Text */
+    --neon-glow: rgba(59, 130, 246, 0.4);
+}</code></pre>
+
+        <h3>4.2 Glassmorphism & Modern Aesthetics</h3>
+        <p>اعتمدنا على مظهر הـ Glassmorphism (تأثير الزجاج) للبطاقات (Cards) باستخدام الـ <code>backdrop-filter</code> וالـ Borders الشفافة:</p>
+        <pre><code>.dashboard-card {
+    background: var(--surface-1);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    /* Micro-animation on hover */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.dashboard-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px var(--neon-glow);
+}</code></pre>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>5. Real-Time Metrics Display</h2>
+
+        <p>الـ Dashboard يعرض 3 أنواع من הـ Metrics المستمرة:</p>
+        <ol>
+            <li><strong>State Metrics:</strong> (Fitness, Energy, Weight, Muscle, Fatigue). يتم جلبها عبر <code>/api/recommendation</code> وعرضها כـ Progress Bars دائرية وأفقية.</li>
+            <li><strong>Q-Values:</strong> نعرض أفضل 3 Actions وقيمة الـ Q-Value (الـ Expected Reward) لكل واحد منهم. هذا يخلي הـ AI "شفاف" (Explainable AI) וالمستخدم يشوف ليش הـ Agent اختار هذا التمرين.</li>
+            <li><strong>Agent Performance:</strong> הـ Learning Curve (الـ Reward יرتفع) וالـ State Coverage (كم State استكشفها).</li>
+        </ol>
+
+    </div>
+</body>
+
+</html>

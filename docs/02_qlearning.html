@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>🧠 02. تفصيل خوارزمية Q-Learning — AI Health Project</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+      mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+    </script>
+</head>
+<body>
+    
+    <div class="sidebar">
+        <h2>📚 التوثيق الشامل</h2>
+        <ul>
+            <li><a href="index.html" >🏠 00. النظرة الشاملة وهيكلة المشروع</a></li>
+<li><a href="01_mdp.html" >🎲 01. المعمارية الرياضية لبيئة (MDP)</a></li>
+<li><a href="02_qlearning.html" class="active">🧠 02. تفصيل خوارزمية Q-Learning</a></li>
+<li><a href="03_approx_q.html" >⚡ 03. Approximate Q-Learning والخصائص</a></li>
+<li><a href="04_value_iteration.html" >📐 04. Value Iteration والحل الدقيق</a></li>
+<li><a href="05_astar.html" >🔍 05. A* Search والتخطيط المستقبلي</a></li>
+<li><a href="06_dashboard.html" >🖥️ 06. واجهة المستخدم والـ APIs</a></li>
+<li><a href="07_defense_faq.html" >🛡️ 07. الأسئلة المتوقعة والردود الأكاديمية</a></li>
+
+        </ul>
+    </div>
+    
+    <div class="content">
+        
+<h1>🧠 02. تفصيل خوارزمية Q-Learning (محاضرة 9)</h1>
+<p>موجودة في ملف <code>agents/q_learning_agent.py</code>.</p>
+
+<h2>1. طبيعة الخوارزمية (Model-Free, Off-Policy)</h2>
+<p>هذه الخوارزمية لا تفهم كيف يعمل جسم الإنسان (لا تملك Model). هي فقط تتخذ فعلاً وتراقب المكافأة (Reward) والحالة الجديدة (Next State)، وبناءً عليها تحدّث جدولاً ضخماً اسمه Q-Table.</p>
+
+<h2>2. جدول Q-Table والتحدي البرمجي</h2>
+<p>لأن لدينا 43,750 حالة، تخزين مصفوفة ثابتة (Numpy Array) بهذا الحجم سيكون غير كفء لأن العديد من الحالات (مثل لياقة 9 مع وزن بدين 4) مستحيلة الحدوث.</p>
+<p><strong>الحل:</strong> استخدام <code>defaultdict</code> من مكتبة <code>collections</code> في بايثون، بحيث لا يتم تهيئة الـ State في الذاكرة إلا إذا زارها الوكيل فعلياً. هذا يوفر الذاكرة بشكل هائل.</p>
+
+<h2>3. التحديث الرياضي لـ Bellman</h2>
+<p>في كل خطوة (Step)، يتم تحديث القيمة في الجدول بناءً على المعادلة:</p>
+<pre><code>Q(s, a) = Q(s, a) + α * [ R + γ * max_a' Q(s', a') - Q(s, a) ]</code></pre>
+<p>تم ترجمة هذا حرفياً في الكود:</p>
+<pre><code>best_next_q = max(self.q_table[next_state].values())
+td_target = reward + self.gamma * best_next_q
+td_error = td_target - current_q
+self.q_table[state][action_key] += self.learning_rate * td_error</code></pre>
+
+<h2>4. الهايبر بارامترز (Hyperparameters)</h2>
+<table dir="ltr">
+    <tr><th>المتغير</th><th>القيمة</th><th>التأثير والتبرير</th></tr>
+    <tr><td><code>NUM_EPISODES</code></td><td>5000</td><td>عدد محاولات المحاكاة للوصول للسياسة. 5000 يعتبر كافياً في بيئة بحجم 43 ألف حالة مع استخدام PBRS.</td></tr>
+    <tr><td><code>ALPHA (α)</code></td><td>0.1</td><td>معدل التعلم. قمنا بتحديده بقيمة منخفضة (0.1) لأن البيئة Stochastic، ولو كان عالياً جداً سيتذبذب التعلم بشدة كلما حدث حدث عشوائي.</td></tr>
+    <tr><td><code>GAMMA (γ)</code></td><td>0.95</td><td>أهمية المستقبل. قيمة عالية جداً لأن اللياقة البدنية تتطلب تضحية فورية (تعب اليوم) من أجل مكافأة بعيدة (جسم صحي بعد شهر).</td></tr>
+    <tr><td><code>EPSILON_DECAY</code></td><td>0.998</td><td>معدل التناقص. مع كل Episode نضرب Epsilon في هذا الرقم. بدأنا بـ 1.0 وننزل ببطء لضمان استكشاف البيئة بالكامل قبل الاستقرار (Exploration vs Exploitation).</td></tr>
+</table>
+
+<h2>5. مراقبة التقدم والـ Metrics</h2>
+<p>يقوم الـ Agent بحساب مقاييس دقيقة جداً لعرضها في الـ Dashboard:</p>
+<ul>
+    <li><strong>Policy Stability:</strong> يقارن السياسة الحالية بسياسة الـ 100 حلقة السابقة. إذا لم تتغير بنسبة 90%، نعتبر أن التدريب اكتمل.</li>
+    <li><strong>State Coverage:</strong> يقيس كم حالة تم استكشافها من أصل 43 ألف. عادة يستكشف حوالي 2000-3000 حالة فقط لأن الـ Reward Shaping يوجهه مباشرة نحو الهدف بدل التخبط العشوائي.</li>
+</ul>
+
+    </div>
+</body>
+</html>

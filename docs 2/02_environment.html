@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>🎲 العضو 2 — MDP Environment</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="sidebar">
+        <h2>📚 ملفات الفريق</h2>
+        <ul>
+            <li><a href="01_leader.html">👑 Leader — النظرة الشاملة</a></li>
+            <li><a href="02_environment.html" class="active">🎲 العضو 2 — MDP Environment</a></li>
+            <li><a href="03_rl_agents.html">🧠 العضو 3 — RL Agents</a></li>
+            <li><a href="04_planning.html">📐 العضو 4 — VI + A* Search</a></li>
+            <li><a href="05_dashboard.html">🖥️ العضو 5 — Web Dashboard</a></li>
+        </ul>
+        <div class="team-badge">
+            <strong>🎲 هذا الملف: العضو 2</strong>
+            MDP Environment, State Space, Reward Function, Data Layer
+        </div>
+    </div>
+
+    <div class="content">
+
+        <span class="member-badge m1">🎲 MEMBER 2 — MDP Environment & Data Layer</span>
+        <h1>بيئة المحاكاة — Markov Decision Process</h1>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>1. الربط بالمنهج — ليش بنينا Custom Environment؟</h2>
+
+        <p>في Lecture 7 درسنا إن أي مشكلة Decision-Making يمكن نمذجتها كـ MDP. المشكلة عندنا: "كيف نعطي المستخدم أفضل Workout + Nutrition Recommendation كل يوم بناءً على حالته الحالية؟"</p>
+        <p>هذه مشكلة Sequential Decision Making كلاسيكية — القرار بتاع اليوم يأثر على حالة بكرة. وهذا بالضبط ما يحله الـ MDP.</p>
+
+        <p>بنينا الـ Environment كـ <strong>OpenAI Gymnasium Environment</strong> — الـ Class يرث من <code>gymnasium.Env</code> ويحدد:</p>
+        <ul>
+            <li><code>action_space = spaces.Discrete(28)</code> — 28 Action ممكن</li>
+            <li><code>observation_space = spaces.MultiDiscrete([10,5,5,5,5,7])</code> — 6 State Variables</li>
+        </ul>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>2. State Space — تصميم فضاء الحالات</h2>
+
+        <h3>2.1 الـ 6 State Variables</h3>
+        <p>من Lecture 7: الـ State لازم يحتوي <strong>كل المعلومات اللازمة</strong> لاتخاذ القرار (Markov Property). اخترنا 6 متغيرات:</p>
+
+        <table>
+            <tr><th>Variable</th><th>Range</th><th>Count</th><th>Type</th><th>Labels</th></tr>
+            <tr>
+                <td><code>fitness</code></td><td>0–9</td><td>10</td>
+                <td>Slow-changing (Accumulator)</td>
+                <td>Very Unfit → Peak</td>
+            </tr>
+            <tr>
+                <td><code>energy</code></td><td>0–4</td><td>5</td>
+                <td>Fast-changing (Immediate)</td>
+                <td>Exhausted → Very High</td>
+            </tr>
+            <tr>
+                <td><code>weight</code></td><td>0–4</td><td>5</td>
+                <td>Slow-changing (Accumulator)</td>
+                <td>Very Underweight → Obese</td>
+            </tr>
+            <tr>
+                <td><code>muscle</code></td><td>0–4</td><td>5</td>
+                <td>Slow-changing (Accumulator)</td>
+                <td>Very Weak → Very Strong</td>
+            </tr>
+            <tr>
+                <td><code>fatigue</code></td><td>0–4</td><td>5</td>
+                <td>Fast-changing (Immediate)</td>
+                <td>None → Severe</td>
+            </tr>
+            <tr>
+                <td><code>day</code></td><td>0–6</td><td>7</td>
+                <td>Cyclic (Auto-increment)</td>
+                <td>Monday → Sunday</td>
+            </tr>
+        </table>
+
+        <pre><code>Total State Space = 10 × 5 × 5 × 5 × 5 × 7 = 43,750 States</code></pre>
+
+        <h3>2.2 ليش قسمنا المتغيرات لـ Fast و Slow؟</h3>
+        <p>في الواقع، لو جريت يوم واحد ما بتلاحظ فرق في وزنك أو لياقتك — هذه متغيرات <strong>بطيئة</strong>. لكن طاقتك والإرهاق بتاعك يتغيرون فوراً بعد كل تمرين — هذه متغيرات <strong>سريعة</strong>.</p>
+
+        <div class="callout info">
+            <h3>💡 Markov Property وتصميم الـ State</h3>
+            <p>من Lecture 7: الـ State لازم يكون <strong>Sufficient Statistic</strong> — يحتوي كل شيء يحتاجه الـ Agent لاتخاذ القرار. لو شلنا الـ <code>fatigue</code> من الـ State، الـ Agent ما يقدر يقرر إذا يحتاج Rest أو لا — ويكسر الـ Markov Property.</p>
+        </div>
+
+        <h3>2.3 Curse of Dimensionality — ليش ما زدنا Variables أكثر؟</h3>
+        <p>من Lecture 10: كل Variable إضافي يضرب حجم الـ State Space:</p>
+        <table>
+            <tr><th>لو أضفنا</th><th>الـ Values</th><th>الـ State Space الجديد</th><th>الزيادة</th></tr>
+            <tr><td>Sleep Quality</td><td>3 (Poor/OK/Good)</td><td>131,250</td><td>×3</td></tr>
+            <tr><td>+ Available Time</td><td>3 (30/60/90 min)</td><td>393,750</td><td>×9</td></tr>
+            <tr><td>+ Age Group</td><td>3 (Young/Mid/Old)</td><td>1,181,250</td><td>×27</td></tr>
+        </table>
+        <p>الـ Tabular Q-Learning يحتاج يزور كل State عدة مرات عشان يتعلم. مع 1.2 مليون State، الـ 5000 Episode ما تكفي أبداً.</p>
+        <p><strong>الحل المعماري:</strong> المتغيرات الإضافية (Equipment, Time, Age) تعمل كـ <strong>Contextual Filters</strong> — ترشّح الـ Actions المتاحة عبر <code>get_available_workout_indices()</code> قبل ما تدخل الـ MDP.</p>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>3. Action Space — تصميم فضاء الأفعال</h2>
+
+        <p>من Lecture 7: الـ Action هو القرار اللي يتخذه الـ Agent في كل Step. عندنا كل Action مركب من عنصرين:</p>
+
+        <h3>3.1 الـ 7 Workout Types</h3>
+        <table>
+            <tr><th>Index</th><th>Workout</th><th>Intensity</th><th>Calories</th><th>Effects على الـ State</th><th>Requirements</th></tr>
+            <tr>
+                <td>0</td><td>😴 Rest Day</td><td>0</td><td>0</td>
+                <td><code>energy +2, fatigue -2</code></td><td>None</td>
+            </tr>
+            <tr>
+                <td>1</td><td>🚶 Walking</td><td>2</td><td>150</td>
+                <td><code>fitness +0.08, weight -0.03, fatigue +0.5</code></td><td>None</td>
+            </tr>
+            <tr>
+                <td>2</td><td>🏃 Jogging</td><td>5</td><td>350</td>
+                <td><code>fitness +0.15, energy -1, weight -0.1, fatigue +1.0</code></td><td><code>fitness≥2, energy≥1</code></td>
+            </tr>
+            <tr>
+                <td>3</td><td>🔥 HIIT</td><td>9</td><td>500</td>
+                <td><code>fitness +0.2, energy -2, weight -0.15, fatigue +2.0</code></td><td><code>fitness≥4, energy≥2</code></td>
+            </tr>
+            <tr>
+                <td>4</td><td>🏋️ Strength</td><td>7</td><td>300</td>
+                <td><code>fitness +0.08, energy -1, muscle +0.15, fatigue +1.5</code></td><td><code>energy≥1</code></td>
+            </tr>
+            <tr>
+                <td>5</td><td>🏊 Swimming</td><td>6</td><td>400</td>
+                <td><code>fitness +0.15, energy -1, weight -0.08, fatigue +1.0</code></td><td><code>fitness≥2, energy≥1</code></td>
+            </tr>
+            <tr>
+                <td>6</td><td>🚴 Cycling</td><td>6</td><td>380</td>
+                <td><code>fitness +0.12, energy -1, weight -0.1, fatigue +1.0</code></td><td><code>fitness≥2, energy≥1</code></td>
+            </tr>
+        </table>
+
+        <h3>3.2 الـ 4 Nutrition Plans</h3>
+        <table>
+            <tr><th>Index</th><th>Plan</th><th>Calories</th><th>Effects</th></tr>
+            <tr><td>0</td><td>Caloric Deficit</td><td>1,600</td><td><code>weight -0.1, energy -0.5</code></td></tr>
+            <tr><td>1</td><td>Maintenance</td><td>2,200</td><td><code>energy +0.5</code></td></tr>
+            <tr><td>2</td><td>Caloric Surplus</td><td>2,800</td><td><code>weight +0.05, muscle +0.05, energy +1</code></td></tr>
+            <tr><td>3</td><td>High Protein</td><td>2,400</td><td><code>muscle +0.08, energy +0.5</code></td></tr>
+        </table>
+
+        <h3>3.3 Action Encoding</h3>
+        <p>الـ 28 Action يتم Encode كـ Single Integer:</p>
+        <pre><code>action = workout_idx × 4 + nutrition_idx
+
+# Decoding:
+workout_idx  = action // 4    # القسمة الصحيحة
+nutrition_idx = action % 4     # الباقي
+
+# مثال: action = 13
+# workout_idx  = 13 // 4 = 3  → HIIT
+# nutrition_idx = 13 % 4  = 1  → Maintenance</code></pre>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>4. Transition Function — <code>step(action)</code></h2>
+
+        <p>من Lecture 7: الـ Transition Function <code>T(s, a, s')</code> تحدد شنو يصير لما الـ Agent يتخذ Action في State معين. في بيئتنا، الـ Transition فيها <strong>Stochasticity</strong>.</p>
+
+        <h3>4.1 خطوات الـ <code>step()</code> بالتفصيل</h3>
+
+        <h4>Step 1: Decode الـ Action</h4>
+        <pre><code>workout_idx = action // NUM_NUTRITION    # 0-6
+nutrition_idx = action % NUM_NUTRITION    # 0-3
+workout_key = WORKOUT_TYPES[workout_idx]  # e.g. 'hiit'
+nutrition_key = NUTRITION_PLANS[nutrition_idx]  # e.g. 'maintenance'</code></pre>
+
+        <h4>Step 2: Requirements Check</h4>
+        <p>كل Workout له <code>requirements</code>. لو المستخدم ما يستوفيها، يتم إجبار Rest مع Penalty <code>-2.0</code>:</p>
+        <pre><code># HIIT requires fitness >= 4 AND energy >= 2
+for req_key, req_val in workout.get('requirements', {}).items():
+    if current_val.get(req_key, 0) < req_val:
+        requirements_met = False  # Forced rest</code></pre>
+        <p>هذا يمنع الـ Agent من اختيار تمارين خطيرة للمبتدئين — <strong>Safety Constraint</strong>.</p>
+
+        <h4>Step 3: حساب الـ Deltas مع Stochastic Noise</h4>
+        <pre><code># الـ Effects الأساسية من الـ Workout + Nutrition Data
+delta_fitness = w_effects['fitness'] + random.uniform(-0.1, 0.1)
+delta_energy  = w_effects['energy'] + n_effects['energy'] + random.uniform(-0.1, 0.1)
+delta_weight  = w_effects['weight'] + n_effects['weight'] + random.uniform(-0.1, 0.1)
+delta_muscle  = w_effects['muscle'] + n_effects['muscle'] + random.uniform(-0.1, 0.1)
+delta_fatigue = w_effects['fatigue'] + n_effects['fatigue'] + random.uniform(-0.1, 0.1)</code></pre>
+
+        <div class="callout warn">
+            <h3>⚠️ Stochasticity — ليش أضفنا Noise؟</h3>
+            <p>من Lecture 7: الـ MDP ممكن يكون Deterministic أو Stochastic. في الواقع، نفس التمرين ممكن يعطي نتايج مختلفة حسب النوم، الضغط النفسي، الطقس. الـ <code>random.uniform(-0.1, 0.1)</code> يمثل هذه العشوائية بنسبة ~10%. هذا يخلي الـ Environment أقرب للواقع ويجبر الـ Agent يتعلم Policy أكثر Robust.</p>
+        </div>
+
+        <h4>Step 4: تحديث الـ Fast-Changing Variables (فوري)</h4>
+        <pre><code># Energy و Fatigue يتغيرون مباشرة كل Step
+new_energy  = clamp(0, 4, round(energy + delta_energy))
+new_fatigue = clamp(0, 4, round(fatigue + delta_fatigue))</code></pre>
+
+        <h4>Step 5: تحديث الـ Slow-Changing Variables (Accumulator Pattern)</h4>
+        <p>هنا أهم Innovation في الـ Environment:</p>
+        <pre><code># نراكم الكسور بدل ما نقرّبها فوراً
+self._acc_fitness += delta_fitness    # مثال: 0 + 0.15 = 0.15
+
+# لما يوصل التراكم لـ 1.0 → نغير الـ Level الفعلي
+if abs(self._acc_fitness) >= 1.0:
+    shift = int(self._acc_fitness)    # +1 أو -1
+    new_fitness = clamp(0, 9, fitness + shift)
+    self._acc_fitness -= shift        # نصفّر المراكم
+
+# نفس الشي للـ weight و muscle</code></pre>
+
+        <div class="callout ok">
+            <h3>✅ ليش الـ Accumulator Pattern ضروري؟</h3>
+            <p>بدونه: <code>fitness + 0.15</code> → <code>round() = 0</code> → <strong>ما يتغير شي أبداً!</strong></p>
+            <p>معاه: بعد 7 أيام Jogging: <code>0.15 × 7 = 1.05</code> → <code>shift = +1</code> → <strong>Fitness Level يرتفع!</strong></p>
+            <p>هذا يحاكي الواقع — اللياقة ما تتحسن بيوم، تحتاج أسابيع من الالتزام.</p>
+        </div>
+
+        <h4>Step 6: Day Increment</h4>
+        <pre><code>new_day = (day + 1) % 7   # Cyclic: 6 (Sunday) → 0 (Monday)</code></pre>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>5. Reward Function — <code>_calculate_reward()</code></h2>
+
+        <p>من Lecture 7: الـ Reward Function <code>R(s, a, s')</code> هي "الإشارة" اللي يتعلم منها الـ Agent. تصميمها هو <strong>أهم قرار هندسي</strong> في أي RL System — لو كانت غلط، الـ Agent يتعلم Policy خاطئة.</p>
+
+        <h3>5.1 Composite Reward Structure</h3>
+        <p>الـ Reward عندنا مركب من عدة Components بأوزان مختلفة حسب الـ Goal:</p>
+
+        <pre><code>R_total = W₁(Goal Progress) + W₂(Energy Maintenance)
+        - W₃(Fatigue Penalty) - W₄(Safety Penalty)
+        + Diversity Bonus - Time Penalty + PBRS</code></pre>
+
+        <h3>5.2 Goal-Specific Rewards (W₁)</h3>
+        <p>كل Goal Type له Reward مختلف:</p>
+
+        <table>
+            <tr><th>Goal</th><th>Primary Reward</th><th>Secondary Reward</th><th>Bonus</th></tr>
+            <tr>
+                <td><strong>weight_loss</strong></td>
+                <td><code>(old_w - new_w) × 3.0</code></td>
+                <td><code>(new_f - old_f) × 1.5</code></td>
+                <td><code>+2.0</code> لو <code>weight ≤ target</code></td>
+            </tr>
+            <tr>
+                <td><strong>muscle_gain</strong></td>
+                <td><code>(new_m - old_m) × 3.0</code></td>
+                <td><code>(new_f - old_f) × 0.8</code></td>
+                <td><code>+1.5</code> لو Strength + High Protein combo</td>
+            </tr>
+            <tr>
+                <td><strong>general_fitness</strong></td>
+                <td><code>(new_f - old_f) × 2.0</code></td>
+                <td><code>(new_m - old_m) × 1.5</code></td>
+                <td><code>+1.5</code> لو <code>fitness ≥ target</code></td>
+            </tr>
+            <tr>
+                <td><strong>endurance</strong></td>
+                <td><code>(new_f - old_f) × 3.5</code></td>
+                <td><code>+1.0</code> لو Cardio Workout</td>
+                <td>—</td>
+            </tr>
+        </table>
+
+        <h3>5.3 Safety Penalties (W₃ + W₄)</h3>
+        <p>هذه تضمن إن الـ Agent ما يوصي بتمارين خطيرة:</p>
+        <pre><code># Progressive Fatigue Penalty — متصاعدة
+if new_fatigue >= 4:  reward -= 4.0   # Severe → Injury Risk
+elif new_fatigue >= 3: reward -= 2.0  # High → Unsustainable
+elif new_fatigue >= 2 and old_fatigue < 2:
+                       reward -= 0.5  # Early Warning
+
+# Energy Depletion
+if new_energy <= 0:   reward -= 2.5   # Exhaustion
+elif new_energy <= 1:  reward -= 0.8  # Low Energy</code></pre>
+
+        <div class="callout danger">
+            <h3>🛡️ Value Alignment — من Lecture 7</h3>
+            <p>الـ Fatigue Penalty (<code>-4.0</code>) هي <strong>أقوى عقوبة في النظام بأكمله</strong>. هذا بالتصميم — نريد الـ Agent يتعلم أن Safety أهم من Progress. في RL Theory، هذا يسمى <strong>Value Alignment</strong>: التأكد أن الـ Objective Function بتاع الـ Agent متوافقة مع مصلحة المستخدم.</p>
+        </div>
+
+        <h3>5.4 Diversity Bonus</h3>
+        <pre><code># عقوبة لو كرر نفس الـ Action يومين متتاليين
+if self._last_action == (workout_key, nutrition_key):
+    reward -= 0.3</code></pre>
+        <p>هذا يمنع الـ Agent من الوقوع في Loop — مثلاً يكرر "HIIT + Deficit" كل يوم. التنويع مهم لمنع الـ Overuse Injuries.</p>
+
+        <h3>5.5 Potential-Based Reward Shaping (PBRS)</h3>
+        <p>من RL Literature (Ng et al. 1999): الـ PBRS يعطي الـ Agent Dense Reward كل Step بدل ما ينتظر نهاية الـ Episode:</p>
+        <pre><code>φ(s) = -state_distance_to_goal(s)   # Potential Function
+shaping = γ · φ(s') - φ(s)          # PBRS Formula
+reward += shaping × 0.5             # Scale Factor</code></pre>
+
+        <div class="callout info">
+            <h3>💡 ليش PBRS ما يغير الـ Optimal Policy؟</h3>
+            <p>Ng et al. أثبتوا رياضياً أن هذا الشكل المحدد <code>F = γ·φ(s') - φ(s)</code> هو الشكل الوحيد اللي يسرّع التعلم بدون ما يغير الـ Optimal Policy. أي شكل ثاني (مثل <code>F = φ(s')</code> بس) ممكن يخلي الـ Agent يتعلم Policy خاطئة.</p>
+        </div>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>6. Goal Checking — <code>_is_goal_reached()</code></h2>
+
+        <p>كل Goal Type له شرط مختلف لنهاية الـ Episode:</p>
+        <pre><code># weight_loss: weight ≤ target AND fitness ≥ target
+# muscle_gain: muscle ≥ target AND fitness ≥ target
+# general_fitness: fitness ≥ target AND muscle ≥ target
+# endurance: fitness ≥ target</code></pre>
+        <p>لو تحقق الشرط، <code>done = True</code> والـ Episode ينتهي. لو ما تحقق خلال 30 Step، <code>truncated = True</code>.</p>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>7. Deterministic Transition — <code>get_deterministic_next_state()</code></h2>
+
+        <p>هذه الدالة <strong>ضرورية</strong> للـ Model-Based Agents (Value Iteration و A* Search). الفرق عن <code>step()</code>:</p>
+
+        <table>
+            <tr><th>الخاصية</th><th><code>step()</code></th><th><code>get_deterministic_next_state()</code></th></tr>
+            <tr><td>Noise</td><td>10% Stochastic</td><td><strong>بدون Noise</strong></td></tr>
+            <tr><td>Side Effects</td><td>يغير الـ Internal State</td><td><strong>Pure Function — بدون Side Effects</strong></td></tr>
+            <tr><td>Accumulators</td><td>يعدّل الـ Instance Variables</td><td>يأخذ ويرجع Accumulators كـ Parameters</td></tr>
+            <tr><td>يستخدمه</td><td>Q-Learning, Approx Q</td><td>Value Iteration, A* Search</td></tr>
+        </table>
+
+        <h3>7.1 الـ Accumulator Mode لـ A* Search</h3>
+        <p>لما A* يبني Search Tree، كل Node لازم يحمل نسخة من الـ Accumulators بتاعته:</p>
+        <pre><code># A* يمرر الـ Accumulators مع كل Call
+next_state, new_acc = env.get_deterministic_next_state(
+    current_state, action, current_accumulators
+)
+# الـ Accumulators تنتقل من Parent Node لـ Child Node</code></pre>
+        <p>بدون هذا، A* ما يقدر يشوف التأثيرات التراكمية على Weight و Fitness عبر عدة أيام — وبيرجع خطة فارغة.</p>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>8. Heuristic Function — <code>state_distance_to_goal()</code></h2>
+
+        <p>من Lecture 3: الـ A* Search يحتاج Heuristic Function <code>h(n)</code> لتقدير المسافة من الـ Current State للـ Goal. لازم تكون <strong>Admissible</strong> (ما تبالغ).</p>
+
+        <pre><code>def state_distance_to_goal(self, state):
+    fitness, energy, weight, muscle, fatigue, _ = state
+    distance = 0
+
+    if self.goal_type == 'weight_loss':
+        distance += max(0, weight - target_weight) × 2       # Weight Gap
+        distance += max(0, target_fitness - fitness) × 1.5    # Fitness Gap
+    elif self.goal_type == 'muscle_gain':
+        distance += max(0, target_muscle - muscle) × 2
+        distance += max(0, target_fitness - fitness) × 1.5
+    # ...
+    distance += fatigue × 0.5    # Fatigue Penalty
+    return distance</code></pre>
+
+        <div class="callout ok">
+            <h3>✅ Admissibility Proof</h3>
+            <p>الـ Heuristic Admissible لأن: الـ Coefficients (×2, ×1.5) أقل من الـ Actual Cost بتاع كل Step. مثلاً، نزول مستوى Weight واحد يحتاج ~20 يوم من Caloric Deficit (تكلفة حقيقية ≈ 40+)، بينما الـ Heuristic تقدّرها بـ 2 فقط. هذا دائماً <strong>Underestimate</strong> → Admissible.</p>
+        </div>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>9. User Profile — <code>user_profile.py</code></h2>
+
+        <p>يحدد الـ <code>initial_state</code> والـ <code>target_state</code> للـ MDP:</p>
+
+        <table>
+            <tr><th>Profile</th><th>Initial State</th><th>Target State</th><th>Goal Type</th></tr>
+            <tr>
+                <td><strong>beginner_weight_loss</strong></td>
+                <td><code>fitness=2, energy=3, weight=3, muscle=1, fatigue=0</code></td>
+                <td><code>fitness=5, weight=2</code></td>
+                <td>weight_loss</td>
+            </tr>
+            <tr>
+                <td><strong>intermediate_muscle</strong></td>
+                <td><code>fitness=4, energy=3, weight=2, muscle=2, fatigue=0</code></td>
+                <td><code>fitness=6, muscle=4</code></td>
+                <td>muscle_gain</td>
+            </tr>
+            <tr>
+                <td><strong>advanced_fitness</strong></td>
+                <td><code>fitness=5, energy=4, weight=2, muscle=2, fatigue=0</code></td>
+                <td><code>fitness=8, muscle=3</code></td>
+                <td>general_fitness</td>
+            </tr>
+        </table>
+
+        <p>كل Profile يحدد أيضاً <code>equipment</code> و <code>time_available</code> اللي تُستخدم كـ Contextual Filters لترشيح الـ Actions المتاحة.</p>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>10. Data Layer — <code>workouts.py</code> و <code>nutrition.py</code></h2>
+
+        <h3>10.1 Equipment Hierarchy</h3>
+        <p>الـ Equipment يعمل كـ Filter:</p>
+        <pre><code>EQUIPMENT_LEVELS = {'none': 0, 'home': 1, 'gym': 2}
+# gym includes home + none workouts
+# home includes none workouts
+# none = rest + walking + jogging + HIIT only</code></pre>
+
+        <h3>10.2 <code>get_available_workout_indices()</code></h3>
+        <p>هذه الدالة ترشّح الـ Workouts حسب الـ Equipment والـ Time:</p>
+        <pre><code>def get_available_workout_indices(equipment='gym', time_available=60):
+    valid = []
+    for i, workout in enumerate(WORKOUT_DATABASE):
+        # لازم يكون عنده المعدات الكافية
+        if workout_level <= user_level:
+            # ولازم عنده وقت كافي
+            if workout.duration_minutes <= time_available:
+                valid.append(i)
+    return valid if valid else [0]  # دائماً Rest متاح</code></pre>
+
+        <div class="callout info">
+            <h3>💡 ليش <code>return [0]</code> كـ Fallback؟</h3>
+            <p>لو المستخدم ما عنده أي معدات وعنده 10 دقائق فقط — ما فيه تمرين يناسبه. بدل ما يعطي Error، نرجع <code>[0]</code> (Rest) لأن الراحة دائماً متاحة بدون معدات وبدون وقت.</p>
+        </div>
+
+    </div>
+</body>
+
+</html>

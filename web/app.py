@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import (
     WEB_HOST, WEB_PORT, DEBUG, NUM_EPISODES,
-    WORKOUT_TYPES, NUTRITION_PLANS
+    WORKOUT_TYPES, NUTRITION_PLANS, MAX_SEARCH_DEPTH
 )
 from environment.fitness_env import FitnessEnv
 from environment.user_profile import UserProfile
@@ -90,7 +90,6 @@ def setup():
     custom = data.get('custom', None)
 
     if custom:
-        _initialize.__wrapped__ = None  # placeholder
         global env, q_agent, approx_agent, search_agent, current_profile, simulation_log
         current_profile = UserProfile(custom_config=custom)
         env = FitnessEnv(user_profile=current_profile)
@@ -172,10 +171,10 @@ def search():
     """
     Run A* search to find the optimal workout plan.
 
-    Expects JSON: { "max_depth": 14 }
+    Expects JSON: { "max_depth": 30 }
     """
     data = request.get_json() or {}
-    max_depth = min(data.get('max_depth', 14), 21)
+    max_depth = min(data.get('max_depth', MAX_SEARCH_DEPTH), MAX_SEARCH_DEPTH)
 
     # Reset env for search
     search_env = FitnessEnv(user_profile=current_profile)

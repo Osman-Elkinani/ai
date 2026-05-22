@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>🧠 العضو 3 — RL Agents</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="sidebar">
+        <h2>📚 ملفات الفريق</h2>
+        <ul>
+            <li><a href="01_leader.html">👑 Leader — النظرة الشاملة</a></li>
+            <li><a href="02_environment.html">🎲 العضو 2 — MDP Environment</a></li>
+            <li><a href="03_rl_agents.html" class="active">🧠 العضو 3 — RL Agents</a></li>
+            <li><a href="04_planning.html">📐 العضو 4 — VI + A* Search</a></li>
+            <li><a href="05_dashboard.html">🖥️ العضو 5 — Web Dashboard</a></li>
+        </ul>
+        <div class="team-badge">
+            <strong>🧠 هذا الملف: العضو 3</strong>
+            Model-Free RL, Tabular Q-Learning, Approximate Q-Learning
+        </div>
+    </div>
+
+    <div class="content">
+
+        <span class="member-badge m2">🧠 MEMBER 3 — Reinforcement Learning Agents</span>
+        <h1>وكلاء التعلم المعزز — Q-Learning</h1>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>1. الربط بالمنهج — Model-Free RL (Lectures 9 & 10)</h2>
+
+        <p>في Lectures 9 و 10، درسنا الـ <strong>Model-Free Reinforcement Learning</strong>. عكس الـ Value Iteration اللي يحتاج يعرف كل تفاصيل البيئة (الـ Transition Model والـ Reward Function) מسبقاً، الـ Model-Free Agents تتعلم <strong>فقط من التجربة (Experience)</strong>.</p>
+        <p>في مشروعنا، בניنا שני Agents يمثلون تطور الـ RL:</p>
+        <ul>
+            <li><code>QLearningAgent</code>: يمثل الـ <strong>Tabular Q-Learning</strong> (Lecture 9) — يحفظ قيمة كل Action في كل State في جدول.</li>
+            <li><code>ApproxQLearningAgent</code>: يمثل الـ <strong>Approximate Q-Learning</strong> (Lecture 10) — يستخدم Features وأوزان (Weights) للتعميم (Generalization) والتغلب على الـ Curse of Dimensionality.</li>
+        </ul>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>2. Tabular Q-Learning — <code>q_learning_agent.py</code></h2>
+
+        <p>الـ Q-Learning هو خوارزمية Off-Policy TD Control. يتعلم Q-Values اللي تمثل الـ Expected Future Reward لكل (State, Action) pair.</p>
+
+        <h3>2.1 الـ Q-Table والتحدي الهندسي (defaultdict)</h3>
+        <p>نظرياً، الـ Q-Table هو مصفوفة (Array) أبعادها `|S| × |A|`. في مشروعنا:</p>
+        <pre><code>|S| = 43,750
+|A| = 28
+Q-Table Size = 1,225,000 Cells</code></pre>
+        <p>لو أنشأنا NumPy Array بهذا الحجم، سيستهلك ذاكرة كبيرة ومعظمها سيكون أصفار لأن الـ Agent مستحيل يزور كل الـ States في 5000 Episode. <strong>الحل:</strong> استخدمنا <code>collections.defaultdict</code>:</p>
+        <pre><code>self.q_table = defaultdict(lambda: np.zeros(self.num_actions))</code></pre>
+        <p>هذا يطبق <strong>Lazy Initialization</strong> — الـ State لا تُضاف للجدول إلا لما يزورها الـ Agent لأول مرة. هذا يوفر الذاكرة ويسرع البرنامج.</p>
+
+        <h3>2.2 Bellman Update Rule (TD Learning)</h3>
+        <p>من Lecture 9، تحديث الـ Q-Value يتم عبر معادلة الـ Temporal Difference (TD):</p>
+        <pre><code>def update(self, state, action, reward, next_state, done):
+    # 1. Get current Q-value
+    current_q = self.q_table[state][action]
+
+    # 2. Calculate TD Target
+    if done:
+        target = reward  # No future rewards if episode is done
+    else:
+        # max_a' Q(s', a')
+        best_next_q = np.max(self.q_table[next_state])
+        target = reward + self.gamma * best_next_q
+
+    # 3. Update Q-value
+    # Q(s,a) = Q(s,a) + alpha * (target - Q(s,a))
+    td_error = target - current_q
+    self.q_table[state][action] += self.alpha * td_error</code></pre>
+        
+        <div class="callout info">
+            <h3>💡 ليش نستخدم <code>alpha</code> (Learning Rate)؟</h3>
+            <p>البيئة بتاعتنا <strong>Stochastic</strong> (فيها عشوائية 10%). لو <code>alpha = 1.0</code>، الـ Agent سيستبدل القيمة القديمة بالجديدة تماماً، وسيكون حساس جداً للـ Noise. اخترنا <code>alpha = 0.1</code> عشان الـ Agent ياخذ 10% من التجربة الجديدة و90% من الخبرة السابقة، مما يعطي Stable Learning.</p>
+        </div>
+
+        <h3>2.3 Exploration vs. Exploitation (ε-Greedy)</h3>
+        <p>عشان نضمن إن الـ Agent يستكشف حلول جديدة وما يعلق في Local Optima، نستخدم <strong>Epsilon-Greedy Policy</strong>:</p>
+        <pre><code>def get_action(self, state):
+    # Exploration: بنسبة epsilon، اختر Random Action
+    if random.random() < self.epsilon:
+        return random.choice(self.env.valid_workout_indices)
+    
+    # Exploitation: بنسبة 1-epsilon، اختر Best Action
+    return np.argmax(self.q_table[state])</code></pre>
+        <p>الـ <code>epsilon</code> يبدأ بـ 1.0 (عشوائية كاملة) وينضرب في <code>epsilon_decay = 0.998</code> كل Episode. ينزل تدريجياً لحد ما يوصل لـ <code>epsilon_end = 0.05</code> (5% عشوائية دائمة عشان يظل يستكشف لو تغيرت البيئة).</p>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>3. Approximate Q-Learning — <code>approx_q_agent.py</code></h2>
+
+        <p>الـ Tabular Q-Learning ممتاز، لكن فيه مشكلة قاتلة درسناها في Lecture 10: <strong>لا يستطيع التعميم (No Generalization)</strong>. لو الـ Agent تعلم أن (fitness=5, weight=2) ممتازة للـ Jogging، وواجه حالة (fitness=5, weight=3)، ما راح يعرف يتصرف لأنها State جديدة تماماً بالنسبة للـ Q-Table.</p>
+
+        <h3>3.1 Feature Engineering — الانتقال من Table إلى معادلة</h3>
+        <p>بدل ما نحفظ قيم لكل State، بنحسب الـ Q-Value كـ <strong>Linear Combination of Features</strong>:</p>
+        <pre><code>Q(s,a) = w₁·f₁(s,a) + w₂·f₂(s,a) + ... + w₁₂·f₁₂(s,a)</code></pre>
+        <p>الـ <strong>Features</strong> هي دوال رياضية تعطينا خصائص للـ (State, Action). صممنا 12 Feature تعكس الـ Domain Knowledge:</p>
+
+        <table>
+            <tr><th>Feature</th><th>الوصف</th><th>المعادلة التقريبية (Concept)</th></tr>
+            <tr>
+                <td><code>f0: action_intensity</code></td>
+                <td>كثافة التمرين مقارنة باللياقة</td>
+                <td><code>workout.intensity / (fitness + 1)</code></td>
+            </tr>
+            <tr>
+                <td><code>f1: energy_cost</code></td>
+                <td>هل التمرين يستهلك طاقة أكثر من المتاح؟</td>
+                <td><code>1.0 if workout.energy_cost > current_energy else 0.0</code></td>
+            </tr>
+            <tr>
+                <td><code>f2: fatigue_risk</code></td>
+                <td>خطر الإصابة إذا الإرهاق عالي</td>
+                <td><code>current_fatigue * workout.intensity</code></td>
+            </tr>
+            <tr>
+                <td><code>f3: goal_alignment</code></td>
+                <td>هل التمرين يخدم الهدف المباشر؟</td>
+                <td><code>1.0 if workout_benefits_goal else 0.0</code></td>
+            </tr>
+        </table>
+        <p>والباقي Features للتغذية (Deficit للوزن، Protein للعضلات) والـ Rest (أهمية الراحة لما الطاقة تكون 0).</p>
+
+        <h3>3.2 حساب الـ Q-Value (الـ Dot Product)</h3>
+        <p>بدل <code>q_table[state][action]</code>، نحسب الـ Q-Value هكذا:</p>
+        <pre><code>def get_q_value(self, state, action):
+    # 1. استخراج الـ 12 Feature
+    features = self.extract_features(state, action)
+    
+    # 2. حساب Dot Product: w1*f1 + w2*f2 + ...
+    return np.dot(self.weights, features)</code></pre>
+
+        <h3>3.3 Weight Update Rule (Stochastic Gradient Descent)</h3>
+        <p>الآن، إحنا ما نحدّث الـ Q-Value، إحنا نحدّث <strong>الأوزان (Weights)</strong>. من Lecture 10:</p>
+        <pre><code>def update(self, state, action, reward, next_state, done):
+    # 1. Calculate TD Error
+    current_q = self.get_q_value(state, action)
+    if done:
+        target = reward
+    else:
+        best_next_q = self.get_value(next_state)
+        target = reward + self.gamma * best_next_q
+    
+    difference = target - current_q
+
+    # 2. Update Weights
+    # w_i = w_i + alpha * difference * f_i(s,a)
+    features = self.extract_features(state, action)
+    for i in range(self.num_features):
+        self.weights[i] += self.alpha * difference * features[i]</code></pre>
+
+        <div class="callout ok">
+            <h3>✅ ليش Approximate Q أحسن في الـ Generalization؟</h3>
+            <p>لأن الأوزان مشتركة بين كل الـ States. لو تعلّم الـ Agent إن <code>w_energy_cost</code> لازم يكون سالب (عشان يتجنب التمارين اللي تخلص طاقته)، هذا الوزن بيُطبق على <strong>أي State</strong> يواجهها مستقبلاً، حتى لو ما زارها أبدًا!</p>
+        </div>
+
+        <!-- ══════════════════════════════════════════ -->
+        <h2>4. Training Metrics — كيف نقيس أداء الـ Agents؟</h2>
+        <p>الـ Agents تحسب Metrics مستمرة أثناء الـ Training عشان نعرضها في الـ Dashboard:</p>
+        <ul>
+            <li><strong>Avg Reward (Learning Curve):</strong> متوسط الـ Reward لكل 50 Episodes. المفروض يرتفع مع الوقت، مما يثبت أن الـ Agent يتعلم Policies أفضل.</li>
+            <li><strong>State Coverage (للـ Tabular فقط):</strong> كم نسبة الـ States اللي زارها الـ Agent من أصل 43,750؟ (عادًة ما تتجاوز 10-15%، وهذا يثبت الحاجة للـ Approximate Q).</li>
+            <li><strong>Policy Stability:</strong> كم نسبة الـ Actions اللي ما تغيرت عن الـ Episode السابق. لما تقترب من 100%، يعني الـ Agent وصل للـ Convergence (الاستقرار).</li>
+        </ul>
+
+    </div>
+</body>
+
+</html>
